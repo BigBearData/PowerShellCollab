@@ -1,0 +1,11 @@
+In this package, following OIS component versions are included:
+            -----
+Enterprise Server: 14.0.3.20
+OISIT: 14.0.3.20
+Omada Data Warehouse 2012: 14.0.3.20
+Omada Data Warehouse 2014: 14.0.3.20
+Omada Data Warehouse 2016: 14.0.3.20
+Omada Data Warehouse 2017: 14.0.3.20
+Omada Provisioning Service: 14.0.3.20
+Role and Policy Engine: 14.0.3.20
+Role and Policy Engine MA: 14.0.3.20

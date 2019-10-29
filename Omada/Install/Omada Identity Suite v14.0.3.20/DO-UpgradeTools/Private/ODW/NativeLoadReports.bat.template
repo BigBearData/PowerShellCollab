@@ -1,0 +1,39 @@
+@echo off
+set ssrsMode=Native
+set ssrsReportServer={demoServerUrl}
+set targetRoot=/
+
+set reportloader="{reportLoaderPath}\ReportLoader.exe"
+
+@echo Loading Main ODW Reports
+set sourceRoot={odwInstallationPath}\Support Files\SSRS Reports\Reports
+set targetRootFolder=Reports
+%reportloader% --mode="%ssrsMode%" --url="%ssrsReportServer%" --target="%targetRoot%%targetRootFolder%"
+%reportloader% --mode="%ssrsMode%" --url="%ssrsReportServer%" --source="%sourceRoot%\ODW.rds" --target="%targetRoot%%targetRootFolder%" 
+%reportloader% --mode="%ssrsMode%" --url="%ssrsReportServer%" --source="%sourceRoot%\ODW *.rdl" --target="%targetRoot%%targetRootFolder%" --datasource="%targetRoot%Reports/ODW"
+%reportloader% --mode="%ssrsMode%" --url="%ssrsReportServer%" --source="%sourceRoot%\Omada *.rdl" --target="%targetRoot%Reports" --datasource="%targetRoot%Reports/ODW"
+
+@echo Loading Dashboard Reports
+set sourceRoot={odwInstallationPath}\Support Files\SSRS Reports\Dashboard
+set targetRootFolder=Dashboard
+%reportloader% --mode="%ssrsMode%" --url="%ssrsReportServer%" --target="%targetRoot%%targetRootFolder%"
+%reportloader% --mode="%ssrsMode%" --url="%ssrsReportServer%" --source="%sourceRoot%\ODW *.rdl" --target="%targetRoot%%targetRootFolder%" --datasource="%targetRoot%Reports/ODW"
+
+@echo Loading Data Quality Reports
+set sourceRoot={odwInstallationPath}\Support Files\SSRS Reports\Data Quality
+set targetRootFolder=Data Quality
+%reportloader% --mode="%ssrsMode%" --url="%ssrsReportServer%" --target="%targetRoot%%targetRootFolder%"
+%reportloader% --mode="%ssrsMode%" --url="%ssrsReportServer%" --source="%sourceRoot%\ODW *.rdl" --target="%targetRoot%%targetRootFolder%" --datasource="%targetRoot%Reports/ODW"
+
+@echo Loading ODW Operation Reports
+set sourceRoot={odwInstallationPath}\Support Files\SSRS Reports\ODW Operation
+set targetRootFolder=ODW Operation
+%reportloader% --mode="%ssrsMode%" --url="%ssrsReportServer%" --target="%targetRoot%%targetRootFolder%"
+%reportloader% --mode="%ssrsMode%" --url="%ssrsReportServer%" --source="%sourceRoot%\ODW *.rdl" --target="%targetRoot%%targetRootFolder%" --datasource="%targetRoot%Reports/ODW"
+
+@echo Loading additional ES reports
+set sourceRoot={odwInstallationPath}\Support Files\SSRS Reports\ES Archive
+set targetRootFolder=ES Archive
+%reportloader% --mode="%ssrsMode%" --url="%ssrsReportServer%" --target="%targetRoot%%targetRootFolder%"
+%reportloader% --mode="%ssrsMode%" --url="%ssrsReportServer%" --source="%sourceRoot%\ESARC.rds" --target="%targetRoot%%targetRootFolder%" 
+%reportloader% --mode="%ssrsMode%" --url="%ssrsReportServer%" --source="%sourceRoot%\ESA *.rdl" --target="%targetRoot%%targetRootFolder%" --datasource="%targetRoot%ES Archive/ESARC"

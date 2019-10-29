@@ -79,23 +79,22 @@ $But_RoPE_Install.Add_Click({
 	$ConnectionString = "Initial Catalog ="+$RoPEDB+";Integrated Security=SSPI;Data Source="+$MSSQLServerName+";"
 	$serviceUser=$RoPEUser
 	$serviceUserPassword=$RoPEPassword
+	$ropeServiceName="ROPE_0"
 	
 	If ($RoPEServer -ne $Env:Computername){
 	[System.Windows.MessageBox]::Show("Please make sure the RoPE Server Name is entered", "Missing Values")
 	}
 
 		$RoPE_Install_Output.text +=  "4.1 Role and Policy Engine installation `r`n"
-
+	####Prep#########
 	[System.Windows.MessageBox]::Show("Please select the relevant intallation file for RoPE `r`nExample: C:\Omada\Install\OIS Role and Policy Engine.exe ", "Select RoPE Install File")
 	$RoPEInstallPath=Get-FileName -initialDirectory "C:\Omada\Install\"
 	$InstallerFolder = Split-Path -Path $RoPEInstallPath
+	$RoPEexe=""
  	$RootInstallerFolder = Split-Path -Path $InstallerFolder
 	$logPath = Join-Path -Path $RootInstallerFolder -ChildPath "\Logs"
-	#Start-Sleep -Seconds 2
-	#$RoPEInstallationDir = Get-Folder -initialDirectory $RootInstallerFolder -Description "Please Select the Installation Directory for RoPE.`r`nExample: C:\Program Files"
-	#$RoPEInstallationPath = #Join-Path -Path $RoPEInstallationDir -ChildPath "Omada Identity Suite\Role and Policy Engine"
 	$PSCommandPath = Join-Path -Path $RootInstallerFolder -ChildPath "\DO-UpgradeTools"
-	#$RoPE_Install_Output.text +=  $args 
+	#$RoPE_Install_Output.text += $RoPEInstallPath
 	
 	
 	$args = (" /l*v \""{0}\installlog_rope.log\""" -F $logPath)
@@ -112,12 +111,31 @@ $But_RoPE_Install.Add_Click({
 	$args += " CONNSTROISX=\""$ConnectionString\"""
 	#$RoPE_Install_Output.text +=  $args 
 	
-	    $RoPE_Install_Output.text += "Role and Policy Engine installation starting...`r`n" 
-		#$t = Start-Process -Wait -WorkingDirectory $ropeInstallerPath -FilePath "$RoPEexe" -ArgumentList " /V""$args /qn"" " -PassThru
+	#####Pre-Checking#####
+	$RoPE_Install_Output.text +=  "`r`nRunning RoPE Pre-Installation Checks `r`n"
+	#AD user check, SQL login check, connection string check
+	
+	####Installation####
+	    $RoPE_Install_Output.text += "`r`nRole and Policy Engine installation starting...`r`n" 
+		#$t = Start-Process -Wait -WorkingDirectory $InstallerFolder -FilePath "$RoPEexe" -ArgumentList " /V""$args /qn"" " -PassThru
 		
-		#netsh http add urlacl url=http://+:8733/RoPERemoteApi/ user=$serviceUserDomain\$serviceUser >$null
-		#$RoPE_Install_Output.text += "Role and Policy Engine installed`r`n"
-
+		#Use this:
+		#$t = Start-Process -Wait -FilePath "$RoPEInstallPath" -ArgumentList " /V""$args /qn"" " -PassThru
+		
+		
+		$RoPE_Install_Output.text += "`r`nRole and Policy Engine installed`r`n"
+	
+	####Post-Config####
+        <# 
+            netsh http add urlacl url=http://+:8733/RoPERemoteApi/ user=$serviceUserDomain\$serviceUser >$null
+			Set-ServicesStartAndDependency -ServiceName $ropeServiceName -StartType "delayed-auto" 
+			
+			Add-UserToDatabase -DBLogin ("{0}\{1}" -F $serviceUserDomain, $ropeDBUser) -Instance $SQLInstance -DBName $RoPEProductDB -Role "db_owner" -User $SQLAdmUser -Password $SQLAdmPass -useSQLUser $useSQLUser -IsCI $IsCI
+			#Add-UserToDatabase -DBLogin 'megamart\srvc_omada' -Instance "." -DBName "testDB" -Role "db_owner" -User sa -Password "Omada12345"
+			
+			#Data Connections
+			#Validate connection string - ConnectionString.config
+ #>
 })
 
 <# 
