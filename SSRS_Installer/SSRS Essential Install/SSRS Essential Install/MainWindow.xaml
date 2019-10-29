@@ -1,0 +1,27 @@
+﻿<Window x:Class="SSRS_Essential_Install.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SSRS_Essential_Install"
+        mc:Ignorable="d"
+        Title="SSRS Essental Installer" Height="450" Width="800">
+    <Grid>
+        <Label Content="SSRS Server Name:" HorizontalAlignment="Left" Height="26" Margin="24,33,0,0" VerticalAlignment="Top" Width="131"/>
+        <Label Content="Named Instance:" HorizontalAlignment="Left" Height="26" Margin="24,126,0,0" VerticalAlignment="Top" Width="131"/>
+        <Label Content="MSSQL Server Name:" HorizontalAlignment="Left" Height="26" Margin="24,95,0,0" VerticalAlignment="Top" Width="131"/>
+        <Label Content="SSRS Service Account:" HorizontalAlignment="Left" Height="26" Margin="24,64,0,0" VerticalAlignment="Top" Width="131"/>
+        <TextBox x:Name="SSRS_ServerName" HorizontalAlignment="Left" Height="26" Margin="173,33,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="169"/>
+        <TextBox x:Name="NamedInstance" HorizontalAlignment="Left" Height="26" Margin="173,126,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="169" TextChanged="NamedInstance_TextChanged"/>
+        <TextBox x:Name="MSSQL_ServerName" HorizontalAlignment="Left" Height="26" Margin="173,95,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="169"/>
+        <TextBox x:Name="SSRS_ServiceAccount" HorizontalAlignment="Left" Height="26" Margin="173,64,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="169"/>
+        <TextBox x:Name="Output_SSRS_PreCheck" HorizontalAlignment="Left" Height="180" Margin="24,200,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="733" TextChanged="TextBox_TextChanged"/>
+        <Button x:Name="Button_RunPreCheck" Content="Run Pre-Check" HorizontalAlignment="Left" Height="26" Margin="395,33,0,0" VerticalAlignment="Top" Width="125"/>
+        <Button x:Name="Button_InstallODW" Content="Install ODW" HorizontalAlignment="Left" Height="26" Margin="395,95,0,0" VerticalAlignment="Top" Width="125"/>
+        <Button x:Name="Button_UploadReports" Content="Upload Reports" HorizontalAlignment="Left" Height="26" Margin="395,64,0,0" VerticalAlignment="Top" Width="125"/>
+        <Label Content="Skip if Default Instance used" HorizontalAlignment="Left" Height="27" Margin="173,152,0,0" VerticalAlignment="Top" Width="169" FontSize="10"/>
+        <Label Content="LicenseKey:" HorizontalAlignment="Left" Height="26" Margin="540,33,0,0" VerticalAlignment="Top" Width="131"/>
+        <TextBox x:Name="LicenseKey" HorizontalAlignment="Left" Height="115" Margin="540,64,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="217" TextChanged="NamedInstance_TextChanged"/>
+
+    </Grid>
+</Window>

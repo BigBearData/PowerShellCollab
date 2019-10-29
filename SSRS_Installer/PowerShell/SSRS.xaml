@@ -1,0 +1,22 @@
+﻿<Window 
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        Title="SSRS Essental Installer" Height="450" Width="800">
+    <Grid>
+        <Label Content="SSRS Server Name:" HorizontalAlignment="Left" Height="26" Margin="24,33,0,0" VerticalAlignment="Top" Width="131"/>
+        <Label Content="SSRS URL:" HorizontalAlignment="Left" Height="26" Margin="24,126,0,0" VerticalAlignment="Top" Width="131"/>
+        <Label Content="MSSQL Server Name:" HorizontalAlignment="Left" Height="26" Margin="24,95,0,0" VerticalAlignment="Top" Width="131"/>
+        <Label Content="SSRS Service Account:" HorizontalAlignment="Left" Height="26" Margin="24,64,0,0" VerticalAlignment="Top" Width="131"/>
+        <TextBox Name="SSRS_ServerName" HorizontalAlignment="Left" Height="26" Margin="173,33,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="169"/>
+        <TextBox Name="SSRS_URL" HorizontalAlignment="Left" Height="26" Margin="173,126,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="169" />
+        <TextBox Name="MSSQL_ServerName" HorizontalAlignment="Left" Height="26" Margin="173,95,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="169"/>
+        <TextBox Name="SSRS_ServiceAccount" HorizontalAlignment="Left" Height="26" Margin="173,64,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="169"/>
+        <TextBox Name="Output_SSRS_PreCheck" HorizontalAlignment="Left" Height="180" Margin="24,200,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="733" />
+        <Button Name="Button_RunPreCheck" Content="Run Pre-Check" HorizontalAlignment="Left" Height="26" Margin="395,33,0,0" VerticalAlignment="Top" Width="125"/>
+        <Button Name="Button_InstallODW" Content="Install ODW" HorizontalAlignment="Left" Height="26" Margin="395,64,0,0" VerticalAlignment="Top" Width="125"/>
+        <Button Name="Button_UploadReports" Content="Upload Reports" HorizontalAlignment="Left" Height="26" Margin="395,95,0,0" VerticalAlignment="Top" Width="125"/>
+        <Label Content="Skip if Default Instance used" HorizontalAlignment="Left" Height="27" Margin="173,152,0,0" VerticalAlignment="Top" Width="169" FontSize="10"/>
+		<Label Content="LicenseKey:" HorizontalAlignment="Left" Height="26" Margin="540,33,0,0" VerticalAlignment="Top" Width="131"/>
+        <TextBox Name="LicenseKey" HorizontalAlignment="Left" Height="115" Margin="540,64,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="217"/>
+
+    </Grid>
+</Window>

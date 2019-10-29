@@ -1,0 +1,14 @@
+C:\repository\PowerShell\SSRS_Installer\SSRS Essential Install\SSRS Essential Install\bin\Debug\SSRS Essential Install.exe.config
+C:\repository\PowerShell\SSRS_Installer\SSRS Essential Install\SSRS Essential Install\bin\Debug\SSRS Essential Install.exe
+C:\repository\PowerShell\SSRS_Installer\SSRS Essential Install\SSRS Essential Install\bin\Debug\SSRS Essential Install.pdb
+C:\repository\PowerShell\SSRS_Installer\SSRS Essential Install\SSRS Essential Install\obj\Debug\MainWindow.g.cs
+C:\repository\PowerShell\SSRS_Installer\SSRS Essential Install\SSRS Essential Install\obj\Debug\App.g.cs
+C:\repository\PowerShell\SSRS_Installer\SSRS Essential Install\SSRS Essential Install\obj\Debug\SSRS Essential Install_MarkupCompile.cache
+C:\repository\PowerShell\SSRS_Installer\SSRS Essential Install\SSRS Essential Install\obj\Debug\SSRS Essential Install_MarkupCompile.lref
+C:\repository\PowerShell\SSRS_Installer\SSRS Essential Install\SSRS Essential Install\obj\Debug\MainWindow.baml
+C:\repository\PowerShell\SSRS_Installer\SSRS Essential Install\SSRS Essential Install\obj\Debug\SSRS Essential Install.g.resources
+C:\repository\PowerShell\SSRS_Installer\SSRS Essential Install\SSRS Essential Install\obj\Debug\SSRS_Essential_Install.Properties.Resources.resources
+C:\repository\PowerShell\SSRS_Installer\SSRS Essential Install\SSRS Essential Install\obj\Debug\SSRS Essential Install.csproj.GenerateResource.cache
+C:\repository\PowerShell\SSRS_Installer\SSRS Essential Install\SSRS Essential Install\obj\Debug\SSRS Essential Install.csproj.CoreCompileInputs.cache
+C:\repository\PowerShell\SSRS_Installer\SSRS Essential Install\SSRS Essential Install\obj\Debug\SSRS Essential Install.exe
+C:\repository\PowerShell\SSRS_Installer\SSRS Essential Install\SSRS Essential Install\obj\Debug\SSRS Essential Install.pdb

@@ -1,0 +1,86 @@
+
+Get-ChildItem -Path "D:\Install\Omada Identity Suite v14.0.2.9\DO-UpgradeTools" -recurse |  Select-String -Pattern "Adding 'Domain Users' as a member of"
+
+Starting uninstall
+Invoke-OmadaUpgrade12.ps1:186
+
+Dropping Database
+Remove-Database.ps1
+
+Removing DB Login
+Remove-DBUser.ps1
+
+Uninstall finished
+Invoke-OmadaUpgrade12.ps1:360
+
+Calling installation script
+Invoke-OmadaUpgrade12.ps1
+
+Adding 'Domain Users' as a member of
+Invoke-OmadaInstallv12.ps1:684
+
+
+BUGS:::::
+
+Step 3.2 
+If SSISInstance is on Enterprise Server, the script still tries to install on remote server, not localhost.
+and
+Reports will be uploaded to HV-P-WINOIS001, copying Omada.ODW.SSRS.Utils.dll from hv-p-winois001
+D:\Program Files\Omada Identity Suite\Datawarehouse\Support Files\Omada.ODW.SSRS.Utils.dll
+D:\Install\Omada Identity Suite v14.0.2.9\DO-UpgradeTools\Private\ODW\Omada.ODW.SSRS.Utils.dll
+
+
+
+
+************************************************************************************************************************
+Changes in scripts:::
+
+
+
+715:
+                $CheckRemote = OIS_SF_TestIfRemote -ServerName $SSISInstance
+                	if ($CheckRemote) 
+	                {
+                    Invoke-Command -ComputerName $SSISInstance -Credential $credDB -ScriptBlock $ScriptBlock -ArgumentList $SSISInstance, $serviceUserDomain, $serviceUser
+	                }
+	                else
+	                {
+                    Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $SSISInstance, $serviceUserDomain, $serviceUser
+                    }
+					
+
+849:
+#if ($SSISInstance -ne "localhost" -and !$SSISInstance.startswith($env:ComputerName))
+$CheckRemote = OIS_SF_TestIfRemote -ServerName $SSISInstance
+if (!$CheckRemote) {
+Invoke-Command -ComputerName $SSISInstance -Credential $credDB -ScriptBlock{
+
+
+
+1474:
+            else{
+                Invoke-Sqlcmd -ServerInstance $SQLInstance -Database $ODWProductDB -Query $q -QueryTimeout 300
+            }
+			
+after
+            else{
+                $CheckRemote = OIS_SF_TestIfRemote -ServerName $SSISInstance
+                 if ($CheckRemote) {
+                 Invoke-Sqlcmd -ServerInstance $SQLInstance -Database $ODWProductDB -Query $q -QueryTimeout 300
+                 }
+                 elseif (!$CheckRemote) {
+                 Invoke-Sqlcmd -Database $ODWProductDB -Query $q -QueryTimeout 300
+                 }
+            }
+			
+			
+1458:
+ if ($CheckRemote) {
+                Invoke-Command -ComputerName $SSISInstance -Credential $credDB -ScriptBlock $ScriptBlock -ArgumentList $odwInstallerPath, $ODWexe, $a, $odwName, $SSISInstance, $odwInstallationPath
+                }
+                else {
+                Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $odwInstallerPath, $ODWexe, $a, $odwName, $SSISInstance, $odwInstallationPath
+                }
+				
+				
+			

@@ -1,0 +1,424 @@
+Transcript started, output file is C:\Omada\Install\Omada Identity Suite v14.0.3.20\Logs\OISITmainLog.txt
+OISIT version: 14.0.3.20
+OISIT version: 14.0.3.20
+Detected following PowerShell version: 5.1
+SQLServer PS module imported
+Starting uninstall...
+Stopping services...
+Service *OETSVC* stopping
+Service *OETSVC* stopped
+Service *RoPE_0* stopping
+Service *RoPE_0* stopped
+Service *Omada ProvisioningService* stopping
+Service *Omada ProvisioningService* stopped
+Waiting for all systems to be stopped...
+Resuming
+Backup of selected DBs
+Only Omada product DBs will be backed up
+No DBs to backup
+***************************
+Uninstalling Omada Identity Suite Role and Policy Engine
+Uninstalled
+Dropping Database 'RoPE'
+Database 'RoPE' dropped
+Uninstalling Omada Provisioning Service
+Uninstalled
+Dropping Database 'ProvisioningService'
+Database 'ProvisioningService' dropped
+Uninstalling Omada Identity Suite Data Warehouse
+Uninstalled
+Dropping Database 'Omada Data Warehouse'
+Database 'Omada Data Warehouse' dropped
+Dropping Database 'Omada Data Warehouse Master'
+Database 'Omada Data Warehouse Master' dropped
+Dropping Database 'Omada Data Warehouse Staging'
+Database 'Omada Data Warehouse Staging' dropped
+Removing web site Enterprise Server...
+Web site removed
+Removing app pool Enterprise Server...
+App pool removed
+Uninstalling Omada Identity Suite Enterprise Server
+Uninstalled
+Dropping Database 'OIS'
+Database 'OIS' dropped
+Dropping Database 'OmadaEnt_Archive'
+Database 'OmadaEnt_Archive' dropped
+Dropping Database 'Omada Source System Data DB'
+Database 'Omada Source System Data DB' dropped
+Removing DB Login megamart\srvc_omada
+User removed
+Uninstall finished
+Calling installation script
+OISIT version: 14.0.3.20
+1. Preparation of installation
+1.1. Preparation of installation files
+SQL server is using default port
+SQL server is using default instance
+SSRS on App server will be used
+Local SQL will be used, localhost will be translated to oisinstalldl2
+Looking for ReportServer...
+Detected following PowerShell version: 5.1
+SQLServer PS module imported
+Microsoft .Net version: 4.6.2
+This is a full Omada Identity Suite installation
+Checking if any DB will be restored
+Installation files from local path will be installed
+Installer for Enterprise Server found: C:\Omada\Install\Omada Identity Suite v14.0.3.20\Install\OIS Enterprise Server.ex
+e
+OISIT version, configuration file version and ES installer version are the same
+Installer for Omada Data Warehouse found: C:\Omada\Install\Omada Identity Suite v14.0.3.20\Install\Omada Data Warehouse.
+x64 SQL 2016.exe
+OISIT version, configuration file version and ODW installer version are the same
+Installer for Role and Policy Engine found: C:\Omada\Install\Omada Identity Suite v14.0.3.20\Install\OIS Role and Policy Engine.exe
+OISIT version, configuration file version and RoPE installer version are the same
+Installer for Omada Provisioning Service found: C:\Omada\Install\Omada Identity Suite v14.0.3.20\Install\Omada Provisioning Service.exe
+OISIT version, configuration file version and OPS installer version are the same
+Installation files prepared
+***************************
+1.2. Preparation of connection string
+Integrated security will be used
+Adding connection string to registry
+Connection string added
+Connection string prepared
+***************************
+1.3. Checking Enterprise Server prerequisites
+Adding required groups to AD
+Adding 'Domain Users' as a member of 'ODWUsers'
+Checking registry if SSRS is installed
+Adding registry values in order to create proper ODW configuration
+Installing windows features / if needed
+Windows Server 2016 or later detected
+Windows features installed
+***************************
+Updating registry for correct web site authentication
+No need to update registry, skipping
+1.4. Removal of old log files
+As this is a installation from a local copy, then there may be some leftovers from previous installations...
+Old log files removed
+***************************
+1.5. Configuration of separate DB\SSIS server, if required
+DB server is the same as APP server, skipping
+***************************
+SSIS is the same as DB server, no additional configuration required, skipping
+SSIS server updated
+***************************
+1.6. Preparation of service user
+User srvc_omada already exists
+Service user created
+***************************
+2.1 Enterprise Server installation
+Copying changesets to import...
+No changesets to copy
+Enterprise Server installed
+***************************
+2.2 Adding additional tools for Enterprise Server
+Installing SQLSysClrTypes2012...
+SQLSysClrTypes2012 installed
+Installing ReportViewer2012...
+ReportViewer2012 installed
+Finished installing additional tools
+***************************
+2.3 Enterprise Server initial configuration
+Creating DB OIS...
+Creating user megamart\srvc_omada in DB
+Adding megamart\srvc_omada as db_owner to OIS
+Finished adding megamart\srvc_omada
+Finished creating 'OIS'
+Creating Source System Data DB...
+Creating user megamart\srvc_omada in DB
+Adding megamart\srvc_omada as db_owner to Omada Source System Data DB
+Finished adding megamart\srvc_omada
+Finished creating 'Omada Source System Data DB'
+Creating Audit DB...
+Creating user megamart\srvc_omada in DB
+Adding megamart\srvc_omada as db_owner to OmadaEnt_Archive
+Finished adding megamart\srvc_omada
+Finished creating 'OmadaEnt_Archive'
+Running initial SQL scripts...
+Running 1 of 3 script(s) in OIS: C:\Program Files\Omada Identity Suite\Enterprise Server\Sql scripts\dbcr_14_0.sql
+Running 2 of 3 script(s) in OIS: C:\Program Files\Omada Identity Suite\Enterprise Server\Sql scripts\dbcr_oim_14_0.sql
+Running 3 of 3 script(s) in Omada Source System Data DB: C:\Program Files\Omada Identity Suite\Enterprise Server\Sql scripts\CreateSourceSystemDataDB.sql
+Addtional updates in DB
+Service *OETSVC* starting
+Service *OETSVC* started
+Generating additional columns in tblCustomer...
+Service *OETSVC* stopping
+Service *OETSVC* stopped
+Restore of OIS is disabled, skipping
+Restore of Omada Source System Data DB is disabled, skipping
+Restore of OmadaEnt_Archive is disabled, skipping
+Adding licence...
+Licensekey Added
+Enterprise Server configured
+***************************
+2.4 Creating a web site for Enterprise Server
+Creating app pool Enterprise Server...
+App pool created
+Creating web site Enterprise Server...
+Adding http binding
+Adding binding for
+Adding binding for 10.123.176.33
+Binding added 10.123.176.33
+Web site created
+Disable anonymous authentication
+Enable and configure windows authentication
+Enable basic authentication
+Add web site to trusted zone
+No need to update registry, skipping
+Added firewall rule for incoming HTTP traffic
+Starting a web site...
+Adding enterpriseserver as a home page
+Home page updated
+IE enhanced security disabled
+Finished creating a web site
+***************************
+2.5 Creating proxy account in MS SQL
+Proxy account created
+***************************
+2.6 Applying changesets
+No changesets to apply in step 2.6, skipping
+Finished applying changesets
+***************************
+Http access updated
+3.1 DCOM configuration
+Setting DCOM Launch Security for srvc_omada
+Setting DCOM Access Security for srvc_omada on local machine
+Setting DCOM Launch Security for srvc_omada
+Setting DCOM Access Security for srvc_omada on local machine
+Setting DCOM Launch Security for srvc_omada
+Setting DCOM Access Security for srvc_omada on local machine
+Setting Kerberos delegation
+Configuration of security for Kerberos on oisinstalldl2
+SPNs for ES web site are not set by OISIT tool
+Trusting user srvc_omada for delegation
+User srvc_omada trusted for kerberos delegation
+Adding user to local groups
+Adding srvc_omada to local Backup Operators group
+User is already a member
+Setting DCOM security
+Changing DCOM access on machine level
+Setting up Default Access Permission
+Current DefaultLaunchPermission matches desired value.
+Applied DefaultAccessPermission
+Setting Activation Permissions
+Setting up Launch and Activation permissions
+User srvc_omada has already Launch and Activation permissions set
+Setting Access permissions
+Setting up Access permissions
+Applied MachineAccessRestriction
+Setting WMI security
+Setting up WMI Namespace security
+WARNING: Waiting for service 'User Access Logging Service (UALSVC)' to start...
+WMI Namespace security changed
+Setting DCOM security
+Changing DCOM Security for Windows Management and Instrumentation
+(oisinstalldl2) Setting DCOM Launch Security of Windows Management and Instrumentation for srvc_omada
+(oisinstalldl2) Setting DCOM Access Security of Windows Management and Instrumentation for srvc_omada
+(oisinstalldl2) Setting DCOM Launch Security of Microsoft SQL Server Integration Services 13.0 for srvc_omada
+(oisinstalldl2) Setting DCOM Access Security of Microsoft SQL Server Integration Services 13.0 for srvc_omada
+(oisinstalldl2)DCOM Security for Windows Management and Instrumentation is set
+Setting Kerberos delegation
+Configuration of security for Kerberos on oisinstalldl2
+SPNs for ES web site are not set by OISIT tool
+Trusting user srvc_omada for delegation
+User srvc_omada trusted for kerberos delegation
+Adding user to local groups
+Adding srvc_omada to local Backup Operators group
+User is already a member
+Setting DCOM security
+Changing DCOM access on machine level
+Setting up Default Access Permission
+Current DefaultLaunchPermission matches desired value.
+Applied DefaultAccessPermission
+Setting Activation Permissions
+Setting up Launch and Activation permissions
+User srvc_omada has already Launch and Activation permissions set
+Setting Access permissions
+Setting up Access permissions
+Applied MachineAccessRestriction
+Setting WMI security
+Setting up WMI Namespace security
+WARNING: Waiting for service 'User Access Logging Service (UALSVC)' to start...
+WMI Namespace security changed
+Setting DCOM security
+Changing DCOM Security for Windows Management and Instrumentation
+(oisinstalldl2) Setting DCOM Launch Security of Windows Management and Instrumentation for srvc_omada
+(oisinstalldl2) Setting DCOM Access Security of Windows Management and Instrumentation for srvc_omada
+(oisinstalldl2) Setting DCOM Launch Security of Microsoft SQL Server Integration Services 13.0 for srvc_omada
+(oisinstalldl2) Setting DCOM Access Security of Microsoft SQL Server Integration Services 13.0 for srvc_omada
+(oisinstalldl2)DCOM Security for Windows Management and Instrumentation is set
+Restart Distributed Transaction Coordinator (MSDTC) service
+Service MSDTC stopping
+Service MSDTC stopped
+Service MSDTC starting
+Service MSDTC started
+DCOM configured
+***************************
+3.2 Omada Data Warehouse installation
+Omada Data Warehouse installation starting...
+Installation on local machine
+Restore of Omada Data Warehouse is disabled, skipping
+Restore of Omada Data Warehouse Staging is disabled, skipping
+Restore of Omada Data Warehouse Master is disabled, skipping
+Omada Data Warehouse installed
+***************************
+3.3 Adding Omada Data Warehouse users
+Adding megamart\srvc_omada as db_owner to Omada Data Warehouse
+Finished adding megamart\srvc_omada
+Adding megamart\srvc_omada as db_owner to Omada Data Warehouse Staging
+Finished adding megamart\srvc_omada
+Adding megamart\srvc_omada as db_owner to Omada Data Warehouse Master
+Finished adding megamart\srvc_omada
+Adding megamart\srvc_omada as db_ssisadmin to msdb
+Finished adding megamart\srvc_omada
+Omada Data Warehouse users added
+***************************
+3.4 Changing dtsConfig configuration files
+Updating attribute \Package.Variables[User::WebServiceURL].Properties[Value]
+Updating attribute \Package.Variables[User::UseDefaultCredentials].Properties[Value]
+Updating attribute \Package.Variables[User::User].Properties[Value]
+Updating attribute \Package.Variables[User::Password].Properties[Value]
+Updating attribute \Package.Variables[User::Domain].Properties[Value]
+Omada Data Warehouse dtsConfig updated
+***************************
+3.5 Omada Data Warehouse configuration
+Running configuration packages
+Running package MSDB\Omada\ODW\Omada ODW Run
+Logs saved to: C:\Omada\Install\Omada Identity Suite v14.0.3.20\Logs\201908071309\Package_step_3.5_1.log
+Found
+Package execution succeeded
+Configuration packages applied
+Adding user for reports...
+User added
+Running initial SQL scripts...
+Omada Data Warehouse configured
+***************************
+3.6 Omada Data Warehouse reports upload
+Creating batch file to upload reports...
+Uplading reports...
+Reports added
+Omada Data Warehouse reports configured
+***************************
+4.1 Role and Policy Engine installation
+Role and Policy Engine installation starting...
+Restore of RoPE is disabled, skipping
+Role and Policy Engine installed
+***************************
+4.2 Adding Role and Policy Engine user to DB
+Adding megamart\srvc_omada as db_owner to RoPE
+Finished adding megamart\srvc_omada
+User added to Role and Policy Engine
+***************************
+5. Omada Provisioning Service installation
+Omada Provisioning Service installation starting...
+DB exists True
+Restore of ProvisioningService is disabled, skipping
+Adding megamart\srvc_omada as db_owner to ProvisioningService
+Finished adding megamart\srvc_omada
+Service *Omada ProvisioningService* starting
+WARNING: Waiting for service 'Omada Provisioning Service (Omada ProvisioningService)' to start...
+Service *Omada ProvisioningService* started
+Omada Provisioning Service installed
+***************************
+6. Additional configuration
+Changesets enabled and Enterprise Server was installed
+Starting the import of core packages...
+Importing core packages, it might take couple of minutes...
+...import in progress...
+...import in progress...
+...import in progress...
+...import in progress...
+...import in progress...
+...import in progress...
+...import in progress...
+...and it looks like import is finished
+Restarting Enterprise Server service after changeset import
+Service OETSVC stopping
+Service OETSVC stopped
+Service OETSVC starting
+Service OETSVC started
+Enterprise server is digesting...
+...changeset absorbed
+Finished importing changeset
+No errors during import
+No changesets to apply in step 6.1.1, skipping
+6.2 Additional configuration of Audit DB
+IIS reset...
+Restarting a web site...
+Restarting Timer service...
+Service *OETSVC* stopping
+Service *OETSVC* stopped
+Service *OETSVC* starting
+Service *OETSVC* started
+Generating audit tables...
+Running archiving scripts...
+AuditDB: OmadaEnt_Archive
+Audit DB configured
+***************************
+6.3 Changing startup type of installed services and adding dependency on MSSQLSERVER
+Only core packages were installed, OPS configuration wasn't pushed to ES
+Startup type changed
+***************************
+Service MsDtsServer130 stopping
+Service MsDtsServer130 stopped
+Service MsDtsServer130 starting
+Service MsDtsServer130 started
+sc.exe config MsDtsServer130 binPath= "C:\Program Files\Microsoft SQL Server\130\DTS\Binn\MsDtsSrvr.exe"
+Updating Integration Services windows service to v13
+6.4 Change configuration of Reporting Server
+Configuration changed
+***************************
+6.7 Import survey(s)
+Survey(s) import disabled, skipping
+***************************
+6.8 Additional DBs restore
+Additional Dbs Restored
+***************************
+6.9 Creation of task for daily import\export
+Creation of task is disabled, skipping
+6.11 Services restart...
+Service *OETSVC* stopping
+Service *OETSVC* stopped
+Service *OETSVC* starting
+Service *OETSVC* started
+Service *Omada ProvisioningService* stopping
+Service *Omada ProvisioningService* stopped
+Service *Omada ProvisioningService* starting
+WARNING: Waiting for service 'Omada Provisioning Service (Omada ProvisioningService)' to start...
+Service *Omada ProvisioningService* started
+Waiting systems to fully start...
+Additional configuration performed
+***************************
+6.12 Backup of newly configured DBs
+Only Omada product DBs will be backed up
+No DBs to backup
+***************************
+Demo creation is disabled, skipping
+Service *RoPE_0* starting
+WARNING: Waiting for service 'Omada Role and Policy Engine Service (RoPE_0)' to start...
+Service *RoPE_0* started
+Service MSDTC stopping
+Service MSDTC stopped
+Service MSDTC starting
+Service MSDTC started
+IIS restart
+Service *OETSVC* stopping
+Service *OETSVC* stopped
+Service *OETSVC* starting
+Service *OETSVC* started
+Omada Identity Suite Timer Service is running
+Omada Provisioning Service is running
+Omada Role and Policy Engine Service is running
+Installation complete.
+
+DisplayName                                 DisplayVersion
+///////////                                 //////////////
+Omada Identity Suite Role and Policy Engine 14.0.3.20
+Omada Identity Suite Enterprise Server      14.0.3.20
+Omada Provisioning Service                  14.0.3.20
+Omada Identity Suite Data Warehouse         14.0.3.20
+
+
+Start time: Wednesday, August 7, 2019 1:10:11 PM, finish time: Wednesday, August 7, 2019 1:21:49 PM
+
+c:\windows\syswow64\windowspowershell\v1.0>

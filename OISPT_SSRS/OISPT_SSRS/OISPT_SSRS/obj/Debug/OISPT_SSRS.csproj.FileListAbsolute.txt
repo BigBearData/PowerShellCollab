@@ -1,0 +1,15 @@
+C:\repository\PowerShell\OISPT_SSRS\OISPT_SSRS\OISPT_SSRS\bin\Debug\OISPT_SSRS.exe.config
+C:\repository\PowerShell\OISPT_SSRS\OISPT_SSRS\OISPT_SSRS\bin\Debug\OISPT_SSRS.exe
+C:\repository\PowerShell\OISPT_SSRS\OISPT_SSRS\OISPT_SSRS\bin\Debug\OISPT_SSRS.pdb
+C:\repository\PowerShell\OISPT_SSRS\OISPT_SSRS\OISPT_SSRS\obj\Debug\OISPT_SSRS.csprojAssemblyReference.cache
+C:\repository\PowerShell\OISPT_SSRS\OISPT_SSRS\OISPT_SSRS\obj\Debug\MainWindow.g.cs
+C:\repository\PowerShell\OISPT_SSRS\OISPT_SSRS\OISPT_SSRS\obj\Debug\App.g.cs
+C:\repository\PowerShell\OISPT_SSRS\OISPT_SSRS\OISPT_SSRS\obj\Debug\OISPT_SSRS_MarkupCompile.cache
+C:\repository\PowerShell\OISPT_SSRS\OISPT_SSRS\OISPT_SSRS\obj\Debug\OISPT_SSRS_MarkupCompile.lref
+C:\repository\PowerShell\OISPT_SSRS\OISPT_SSRS\OISPT_SSRS\obj\Debug\MainWindow.baml
+C:\repository\PowerShell\OISPT_SSRS\OISPT_SSRS\OISPT_SSRS\obj\Debug\OISPT_SSRS.g.resources
+C:\repository\PowerShell\OISPT_SSRS\OISPT_SSRS\OISPT_SSRS\obj\Debug\OISPT_SSRS.Properties.Resources.resources
+C:\repository\PowerShell\OISPT_SSRS\OISPT_SSRS\OISPT_SSRS\obj\Debug\OISPT_SSRS.csproj.GenerateResource.cache
+C:\repository\PowerShell\OISPT_SSRS\OISPT_SSRS\OISPT_SSRS\obj\Debug\OISPT_SSRS.csproj.CoreCompileInputs.cache
+C:\repository\PowerShell\OISPT_SSRS\OISPT_SSRS\OISPT_SSRS\obj\Debug\OISPT_SSRS.exe
+C:\repository\PowerShell\OISPT_SSRS\OISPT_SSRS\OISPT_SSRS\obj\Debug\OISPT_SSRS.pdb

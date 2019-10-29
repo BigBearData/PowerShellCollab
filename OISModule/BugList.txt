@@ -1,0 +1,36 @@
+OISEssential Bugs
+
+PR1:
+* IMPORT USERNAMES AND COMPUTER NAMES 
+* PORT CHECKS 
+* USER PERMISSION
+* GET CONFIG FILE LOCATION (Running location)
+* WHAT TO DO WHEN INSTALL CONFIG FILE IS MISSING?
+* RECOMENDATION FOR MSSQL SERVER AND SERVICE ACCOUNT
+* FILE SHARE ACCESSES AND SERVER PERMISSIONS.
+
+
+* DONT USE PS MODULES IF THEY ARE NOT INSTALLED
+* GET INSTALLED SOFTWARE - IF NO PARAMETER, LIST ALL SOFTWARE. 
+
+
+
+TODO:
+* PRE-CHECK ON NSLOOKUP AND PING 
+* CHECK IF USING SQL CLUSTER 
+	THEN WHAT?
+* SAY WHAT VERSIONS SHOULD BE INSTALLED (software)
+* BYPASS SWITCH FOR InvokeCommandCheckSSRS
+* SPN RECOMENDATION FOR SSRS SERVICE ACCOUNT NEEDS TO BE DIFFERENT FROM EA 
+
+DONE:
+* ois_getinstalledsoftware should be using -servername
+* look at function ois_getinstalledsoftware with invoke-command
+* check if computer is trusted for delegation
+* get installed software does not work with invoke-command 
+* get all paths
+* suggest spsns
+* service path location from the service. 
+* need to use specific config file 
+* try invoke-command is not working right. 
+* pre-check before invoke-command
