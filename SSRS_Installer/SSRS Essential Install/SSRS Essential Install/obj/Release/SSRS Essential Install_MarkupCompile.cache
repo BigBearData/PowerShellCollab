@@ -4,11 +4,11 @@
 winexe
 C#
 .cs
-C:\Users\stb\OneDrive - Omada A S\Git\PowerShellCollab\SSRS_Installer\SSRS Essential Install\SSRS Essential Install\obj\Debug\
+C:\Users\stb\OneDrive - Omada A S\Git\PowerShellCollab\SSRS_Installer\SSRS Essential Install\SSRS Essential Install\obj\Release\
 SSRS_Essential_Install
 none
 false
-DEBUG;TRACE
+TRACE
 C:\Users\stb\OneDrive - Omada A S\Git\PowerShellCollab\SSRS_Installer\SSRS Essential Install\SSRS Essential Install\App.xaml
 11151548125
 
