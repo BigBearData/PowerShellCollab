@@ -64,7 +64,8 @@ $RoPE_ServerName.text = $Env:Computername
 ################################################
 ##INSTALL RoPE#################################
 $But_RoPE_Install.Add_Click({
-
+	
+	#From Form
 	$RoPEServer = $RoPE_ServerName.Text
 	$RoPEUser = $RoPE_ServiceAccount.Text
 	$MSSQLServerName = $MSSQL_ServerName.Text
@@ -74,6 +75,7 @@ $But_RoPE_Install.Add_Click({
 	$RoPE_ServicePassword.Text = " "
 	$RoPEInstallationPath = $RoPE_InstDir.Text
 	
+	#Constants
 	$SQLInstance = $MSSQLServerName
 	$serviceUserDomain=$env:UserDomain
 	$ConnectionString = "Initial Catalog ="+$RoPEDB+";Integrated Security=SSPI;Data Source="+$MSSQLServerName+";"
@@ -120,15 +122,17 @@ $But_RoPE_Install.Add_Click({
 		#$t = Start-Process -Wait -WorkingDirectory $InstallerFolder -FilePath "$RoPEexe" -ArgumentList " /V""$args /qn"" " -PassThru
 		
 		#Use this:
-		#$t = Start-Process -Wait -FilePath "$RoPEInstallPath" -ArgumentList " /V""$args /qn"" " -PassThru
+		$t = Start-Process -Wait -FilePath "$RoPEInstallPath" -ArgumentList " /V""$args /qn"" " -PassThru
 		
 		
 		$RoPE_Install_Output.text += "`r`nRole and Policy Engine installed`r`n"
 	
 	####Post-Config####
+	        #netsh http add urlacl url=http://+:8733/RoPERemoteApi/ user=$serviceUserDomain\$serviceUser >$null
+			#netsh http add urlacl url=http://+:8010/RoPERemoteApi/ user=$serviceUserDomain\$serviceUser >$null
+			#Set-ServicesStartAndDependency -ServiceName $ropeServiceName -StartType "delayed-auto"
         <# 
-            netsh http add urlacl url=http://+:8733/RoPERemoteApi/ user=$serviceUserDomain\$serviceUser >$null
-			Set-ServicesStartAndDependency -ServiceName $ropeServiceName -StartType "delayed-auto" 
+ 
 			
 			Add-UserToDatabase -DBLogin ("{0}\{1}" -F $serviceUserDomain, $ropeDBUser) -Instance $SQLInstance -DBName $RoPEProductDB -Role "db_owner" -User $SQLAdmUser -Password $SQLAdmPass -useSQLUser $useSQLUser -IsCI $IsCI
 			#Add-UserToDatabase -DBLogin 'megamart\srvc_omada' -Instance "." -DBName "testDB" -Role "db_owner" -User sa -Password "Omada12345"
