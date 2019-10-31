@@ -29,6 +29,238 @@ Add-Type -AssemblyName PresentationFramework
 		}
 		return $Folder
 	} #end function Get-Folder
+	
+Function Add-UserToDatabase {
+
+    <#
+    .SYNOPSIS
+        Adds user to DB
+    .DESCRIPTION
+        Adds user to role in DB
+    .PARAMETER User
+        DB user name
+    .PARAMETER Role
+        Name of role
+    .PARAMETER Instance
+        Instance of DB server
+    .PARAMETER DBName
+        Name of DB
+    .PARAMETER IsCI
+        If this a manual install or CI triggered
+		
+    .EXAMPLE
+        Add-UserToDatabase -DBLogin 'megamart\srvc_omada' -Instance "." -DBName "testDB" -Role "db_owner -User sa -Password "Omada12345"
+    #>
+    [cmdletbinding(SupportsShouldProcess)]
+    Param(
+    [Parameter (Mandatory)]
+    [string]$User,
+
+    [Parameter (Mandatory)]
+    [string]$Password,
+
+    [Parameter (Mandatory)]
+    [string]$Role,
+
+    [Parameter (Mandatory)]
+    [string]$Instance,
+
+    [Parameter (Mandatory)]
+    [string]$DBName,
+
+    [Parameter (Mandatory)]
+    [string]$DBLogin, 
+
+    [Parameter ()]
+    [bool]$useSQLUser = $false,
+    
+	[Boolean]$IsCI = $false
+
+    )
+
+        $RoPE_Install_Output.text += ("Adding {0} as {1} to {2}`r`n" -F $DBLogin,$Role, $DBName)
+
+        $c = "
+
+        USE [$DBName]
+        GO
+        IF NOT EXISTS 
+            (SELECT name  
+            FROM master.sys.server_principals
+            WHERE name = '$DBLogin')
+        BEGIN
+            CREATE LOGIN [$DBLogin] FROM WINDOWS WITH DEFAULT_LANGUAGE=[us_english]
+        END
+        
+		BEGIN TRY 
+			IF EXISTS 
+				(SELECT name 
+				FROM sys.database_principals
+				WHERE name = '$DBLogin')
+			BEGIN
+				DROP USER [$DBLogin] 
+				;
+			END
+        END TRY  
+		BEGIN CATCH 
+			print 'error'
+		END CATCH
+
+
+        IF NOT EXISTS 
+            (SELECT name 
+            FROM sys.database_principals
+            WHERE name = '$DBLogin')
+        BEGIN
+            CREATE USER [$DBLogin] FOR LOGIN [$DBLogin]
+            ;
+            ALTER ROLE [db_owner] ADD MEMBER [$DBLogin]
+            ;
+        END
+        
+        "    
+        if ($useSQLUser){
+            Invoke-Sqlcmd -Username $User -Password $Password -ServerInstance $Instance -Query $c
+        }
+        else{
+            Invoke-Sqlcmd -ServerInstance $Instance -Query $c
+        }
+
+    $RoPE_Install_Output.text += ("Finished adding {0}`r`n" -F $DBLogin) 
+}
+
+Function Create-Database {
+
+    <#
+    .SYNOPSIS
+        Creates DB
+    .DESCRIPTION
+        Creates DB in given instance
+    .PARAMETER User
+        DB user name
+    .PARAMETER Password
+        Password of DB user
+    .PARAMETER Instance
+        Instance of DB server
+    .PARAMETER DBName
+        Name of DB
+    .PARAMETER SnapshotIsolation
+        Snapshots ISO isolation
+    .PARAMETER IsCI
+        If this a manual install or CI triggered
+		
+    .EXAMPLE
+        Create-Database -User sa -Password 'P@55word' -Instance "demodb" -DBName "testDB" -SnapshotIsolation $false -DBLogin 'megamart\srvc_omada' -DBAdmin 'sa' -DBPass 'Omada12345'
+    #>
+    [cmdletbinding(SupportsShouldProcess)]
+    Param(
+    [Parameter (Mandatory)]
+    [string]$User,
+    
+    [Parameter (Mandatory)]
+    [string]$Password,
+
+    [Parameter (Mandatory)]
+    [string]$Instance,
+
+    [Parameter (Mandatory)]
+    [string]$DBName,
+
+    [Parameter (Mandatory)]
+    [string]$SnapshotIsolation,
+
+    [Parameter ()]
+    [string]$DBLogin,
+
+    [Parameter (Mandatory)]
+    [string]$DBAdmin,
+
+    [Parameter (Mandatory)]
+    [string]$DBPass, 
+
+    [Parameter ()]
+    [bool]$useSQLUser = $false,
+    
+	[Boolean]$IsCI = $false
+
+
+    )
+    if ($useSQLUser){
+        $targetConn = New-Object ('Microsoft.SqlServer.Management.Common.ServerConnection') ($Instance, $DBAdmin, $DBPass)
+        $sqlserver = New-Object ("Microsoft.SqlServer.Management.Smo.Server") $targetConn
+    }
+    else{
+         $SqlConnection = New-Object System.Data.SqlClient.SqlConnection
+         $SqlConnection.ConnectionString = ("Server={0};Database=master;Integrated Security=True" -F $Instance)
+         $sqlserver = New-Object ("Microsoft.SqlServer.Management.Smo.Server") $SqlConnection
+    }
+    $path = $sqlserver.Databases["msdb"].FileGroups[0].Files[0].FileName | Split-Path -Parent
+
+    $log = ($DBName + "_log")
+    $c = "
+        if db_id('$DBName') is null
+        begin
+            CREATE DATABASE [$DBName]
+            CONTAINMENT = NONE
+            ON  PRIMARY 
+            ( NAME = N'$DBName', FILENAME = N'$path\$DBName.mdf' , FILEGROWTH = 1024KB )
+            LOG ON 
+            ( NAME = N'$log', FILENAME = N'$path\$log.ldf' , SIZE = 1024KB , FILEGROWTH = 10%)
+            ;
+        end
+            "
+            if ($useSQLUser){
+                Invoke-Sqlcmd -Username $User -Password $Password -ServerInstance $Instance -Query $c
+            }
+            else{
+                Invoke-Sqlcmd -ServerInstance $Instance -Query $c
+            }
+
+            $c = "
+            USE [$DBName]
+            declare @dbname varchar(256)
+            declare @sql nvarchar(256)
+            select @dbname=db_name(dbid) from master..sysprocesses where spid=@@SPID
+            set @sql = 'ALTER DATABASE [' + @dbname + '] SET ALLOW_SNAPSHOT_ISOLATION ON'
+            exec sp_executesql @sql
+            set @sql = 'ALTER DATABASE [' + @dbname + '] SET READ_COMMITTED_SNAPSHOT ON'
+            exec sp_executesql @sql
+            ;
+            
+       "
+       if ($useSQLUser){
+            Invoke-Sqlcmd -Username $User -Password $Password -ServerInstance $Instance -Query $c
+        }
+        else{
+            Invoke-Sqlcmd -ServerInstance $Instance -Query $c
+        }
+
+    if ($DBLogin.Length -gt 0){
+        $RoPE_Install_Output.text += ("Creating user {0} in DB`r`n" -F $DBLogin)
+        $c = "
+        IF NOT EXISTS 
+            (SELECT name  
+            FROM master.sys.server_principals
+            WHERE name = '$DBLogin')
+        BEGIN
+            CREATE LOGIN [$DBLogin] FROM WINDOWS WITH DEFAULT_LANGUAGE=[us_english]
+        END
+        "
+        if ($useSQLUser){
+            Invoke-Sqlcmd -Username $User -Password $Password -ServerInstance $Instance -Query $c
+        }
+        else{
+            Invoke-Sqlcmd -ServerInstance $Instance -Query $c
+        }
+
+        Add-UserToDatabase -DBLogin $DBLogin -Instance $Instance -DBName $DBName -Role "db_owner" -User $user -Password $Password -useSQLUser $useSQLUser
+
+    }
+    
+
+    $RoPE_Install_Output.text += "Finished creating '$dbName' `r`n"
+}
+
 
 #READ THE XAML FILE
 [xml]$Form = Get-Content ".\ES_Install.xaml"
@@ -82,6 +314,10 @@ $But_RoPE_Install.Add_Click({
 	$serviceUser=$RoPEUser
 	$serviceUserPassword=$RoPEPassword
 	$ropeServiceName="ROPE_0"
+	$ropeDBUser=$serviceUser
+	$RoPEProductDB=$RoPEDB
+	$SQLAdmUser = 'unknown'
+	$SQLAdmPass = '404'
 	
 	If ($RoPEServer -ne $Env:Computername){
 	[System.Windows.MessageBox]::Show("Please make sure the RoPE Server Name is entered", "Missing Values")
@@ -102,8 +338,8 @@ $But_RoPE_Install.Add_Click({
 	$args = (" /l*v \""{0}\installlog_rope.log\""" -F $logPath)
 	$args +=  " IS_SQLSERVER_SERVER=\""$SQLInstance\"""
 	$args +=  " IS_SQLSERVER_AUTHENTICATION=\""0\"""
-<# 	$args +=  " IS_SQLSERVER_USERNAME=\""$SQLAdmUser\"""
-	$args +=  " IS_SQLSERVER_PASSWORD=\""$SQLAdmPass\""" #>
+ 	$args +=  " IS_SQLSERVER_USERNAME=\""$SQLAdmUser\"""
+	$args +=  " IS_SQLSERVER_PASSWORD=\""$SQLAdmPass\""" 
 	$args += (" IS_SQLSERVER_DATABASE=\""{0}\""" -F $RoPEDB)
 	$args += " SERVICETYPE=\""2\"""#1=user account, 2=Service account
 	$args += " SERVICEDOMAIN=\""$serviceUserDomain\"""
@@ -111,11 +347,13 @@ $But_RoPE_Install.Add_Click({
 	$args += " SERVICEPASSWORD=\""$serviceUserPassword\"""
 	$args +=  " INSTALLDIR=\""$ropeInstallationPath\"""
 	$args += " CONNSTROISX=\""$ConnectionString\"""
-	#$RoPE_Install_Output.text +=  $args 
+	#$RoPE_Install_Output.text +=  $logPath 
 	
 	#####Pre-Checking#####
 	$RoPE_Install_Output.text +=  "`r`nRunning RoPE Pre-Installation Checks `r`n"
 	#AD user check, SQL login check, connection string check
+	#create the database 
+	Create-Database -User sa -Password 'P@55word' -Instance "demodb" -DBName $RoPEDB -SnapshotIsolation $false -DBLogin ("{0}\{1}" -F $serviceUserDomain, $ropeDBUser) -DBAdmin 'sa' -DBPass 'Omada12345'
 	
 	####Installation####
 	    $RoPE_Install_Output.text += "`r`nRole and Policy Engine installation starting...`r`n" 
@@ -123,6 +361,7 @@ $But_RoPE_Install.Add_Click({
 		
 		#Use this:
 		$t = Start-Process -Wait -FilePath "$RoPEInstallPath" -ArgumentList " /V""$args /qn"" " -PassThru
+		#$t = Start-Process -Wait -FilePath "$RoPEInstallPath" -ArgumentList " /V""$args "" " -PassThru
 		
 		
 		$RoPE_Install_Output.text += "`r`nRole and Policy Engine installed`r`n"
@@ -131,11 +370,12 @@ $But_RoPE_Install.Add_Click({
 	        #netsh http add urlacl url=http://+:8733/RoPERemoteApi/ user=$serviceUserDomain\$serviceUser >$null
 			#netsh http add urlacl url=http://+:8010/RoPERemoteApi/ user=$serviceUserDomain\$serviceUser >$null
 			#Set-ServicesStartAndDependency -ServiceName $ropeServiceName -StartType "delayed-auto"
+			#Add-UserToDatabase -DBLogin ("{0}\{1}" -F $serviceUserDomain, $ropeDBUser) -Instance $SQLInstance -DBName $RoPEProductDB -Role "db_owner" -User $SQLAdmUser -Password $SQLAdmPass
+			#Add-UserToDatabase -DBLogin 'megamart\srvc_omada' -Instance "." -DBName "testDB" -Role "db_owner" -User sa -Password "Omada12345"
         <# 
  
-			
-			Add-UserToDatabase -DBLogin ("{0}\{1}" -F $serviceUserDomain, $ropeDBUser) -Instance $SQLInstance -DBName $RoPEProductDB -Role "db_owner" -User $SQLAdmUser -Password $SQLAdmPass -useSQLUser $useSQLUser -IsCI $IsCI
-			#Add-UserToDatabase -DBLogin 'megamart\srvc_omada' -Instance "." -DBName "testDB" -Role "db_owner" -User sa -Password "Omada12345"
+
+
 			
 			#Data Connections
 			#Validate connection string - ConnectionString.config
