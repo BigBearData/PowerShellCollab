@@ -29,9 +29,17 @@
                         <ColumnDefinition Width="749*"/>
                     </Grid.ColumnDefinitions>
                     <Label Content="ES Server Name:" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Height="25" Width="136" Grid.ColumnSpan="2"/>
-                    <Label Content="ES Service Account:" HorizontalAlignment="Left" Margin="10,40,0,0" VerticalAlignment="Top" Height="25" Width="136" Grid.ColumnSpan="2"/>
+                    <Label Content="ES DB Name:" HorizontalAlignment="Left" Margin="10,40,0,0" VerticalAlignment="Top" Height="25" Width="136" Grid.ColumnSpan="2"/>
+					<Label Content="SQL Server:" HorizontalAlignment="Left" Margin="10,66,0,0" VerticalAlignment="Top" Height="25" Width="136" Grid.ColumnSpan="2"/>
+					<Label Content="ES Service Account:" HorizontalAlignment="Left" Margin="490,14,0,0" VerticalAlignment="Top" Height="25" Width="136" Grid.ColumnSpan="2"/>
+					<Label Content="ES User Password:" HorizontalAlignment="Left" Margin="490,41,0,0" VerticalAlignment="Top" Height="25" Width="136" Grid.ColumnSpan="2"/>
+					<Label Content="Install Dir:" HorizontalAlignment="Left" Margin="350,67,0,0" VerticalAlignment="Top" Height="25" Width="136" Grid.ColumnSpan="2"/>
                     <TextBox Name="ES_ServerName" HorizontalAlignment="Left" Height="25" Margin="134,14,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="159" Grid.Column="1"/>
-                    <TextBox Name="ES_ServiceAccounts" HorizontalAlignment="Left" Height="25" Margin="134,39,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="159" Grid.Column="1"/>
+                    <TextBox Name="ES_DBName" Text = "OIS" HorizontalAlignment="Left" Height="25" Margin="134,41,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="159" Grid.Column="1"/>
+					<TextBox Name="ES_MSSQL_ServerName" Text = "servername\instance" HorizontalAlignment="Left" Height="25" Margin="134,67,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="159" Grid.Column="1"/>
+					<TextBox Name="ES_InstDir" Text = "C:\Program Files\Omada Identity Suite\Enterprise Server" HorizontalAlignment="Left" Height="25" Margin="477,67,0,0" TextWrapping="NoWrap" VerticalAlignment="Top" Width="248" Grid.Column="1"/>
+					<TextBox Name="ES_ServiceAccount"  HorizontalAlignment="Left" Height="25" Margin="605,14,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" Grid.Column="1"/>
+					<TextBox Name="ES_ServicePassword"  HorizontalAlignment="Left" Height="25" Margin="605,41,0,0" TextWrapping="NoWrap" VerticalAlignment="Top" Width="120" Grid.Column="1"/>
                     <Button Name="But_ES_Install" Content="Install ES" Grid.Column="1" HorizontalAlignment="Left" Height="21" Margin="333.2,14,0,0" VerticalAlignment="Top" Width="99"/>
                     <Button Name="But_Clear" Content="Clear" Grid.Column="1" HorizontalAlignment="Left" Height="24" Margin="333.2,40,0,0" VerticalAlignment="Top" Width="99"/>
                     <TextBox Name="ES_Install_Output" HorizontalAlignment="Left" Height="229" Margin="10,119,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="746"  Grid.ColumnSpan="2"/>

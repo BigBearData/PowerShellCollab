@@ -252,7 +252,65 @@ $RoPE_InstDir = $Win.FindName("RoPE_InstDir")
 
 $RoPE_ServerName.text = $Env:Computername
 
+#ES Variables########################################################
+$ES_ServerName = $Win.FindName("ES_ServerName")
+$ES_ServiceAccount = $Win.FindName("ES_ServiceAccount")
+$ES_MSSQL_ServerName = $Win.FindName("ES_MSSQL_ServerName")
+$But_ES_Install = $Win.FindName("But_ES_Install")
+$ES_DBName = $Win.FindName("ES_DBName")
+$ES_ServicePassword = $Win.FindName("ES_ServicePassword")
+$ES_Install_Output = $Win.FindName("ES_Install_Output")
+$ES_InstDir = $Win.FindName("ES_InstDir")
+
+$ES_ServerName.text = $Env:Computername
+
 ################################################
+
+##INSTALL Enterprise Server#################################
+$But_ES_Install.Add_Click({
+	#From Form
+	$ESServer = $ES_ServerName.Text
+	$ESEUser = $ES_ServiceAccount.Text
+	$MSSQLServerName = $ES_MSSQL_ServerName.Text
+	$ESEUser = $ES_ServiceAccount.Text
+	$ESDB = $ES_DBName.Text
+	$ESPassword = $ES_ServicePassword.Text
+	$ES_ServicePassword.Text = " "
+	$ESInstallationPath = $ES_InstDir.Text
+	
+	#Constants
+	$SQLInstance = $MSSQLServerName
+	$serviceUserDomain=$env:UserDomain
+	$ConnectionString = "Initial Catalog ="+$ESDB+";Integrated Security=SSPI;Data Source="+$MSSQLServerName+";"
+	$serviceUser=$ESEUser
+	$serviceUserPassword=$ESPassword
+	$ESServiceName="ROPE_0"
+	$ESDBUser=$serviceUser
+	$ESProductDB=$ESDB
+	$SQLAdmUser = 'unknown'
+	$SQLAdmPass = '404'
+	
+	#Process:
+	#
+            #Show-Info -IsCI $IsCI -Message "2.1 Enterprise Server installation" -ForegroundColor DarkGreen
+			$ES_Install_Output.text += "2.1 Enterprise Server installation`r`n" 
+            $args = ("/l*v \""{0}\installlog_es.log\""" -F $logPath)
+            $args +=  " SERVICETYPE=\""2\"""
+            $args +=  " SERVICEDOMAIN=\""$serviceUserDomain\"""
+            $args +=  " SERVICEUSER=\""$serviceUser\"""
+            $args +=  " SERVICEPASSWORD=\""$serviceUserPassword\"""
+            $args +=  " INSTALLDIR=\""$esInstallationPath\"""
+            $args +=  " ADDLOCAL=\""$esFeaturesToInstall\"""
+		$ES_Install_Output.text += $args
+            #$t = Start-Process -Wait -WorkingDirectory $esInstallerPath -FilePath $esExe -ArgumentList " /V""$args /qn"" " -PassThru -WindowStyle Hidden
+
+<# 			if ($null -eq (Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*  | Where-Object { $_.DisplayName -contains $esName} )){
+				Show-Info -IsCI $IsCI -Message ("{0} was not installed. Please check installation log for details - {1}\installlog_es.log" -f $esName, $logPath) -ForegroundColor Red
+				break
+			} #>
+
+})
+
 ##INSTALL RoPE#################################
 $But_RoPE_Install.Add_Click({
 	
