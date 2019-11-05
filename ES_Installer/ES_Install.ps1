@@ -294,6 +294,19 @@ $But_ES_Install.Add_Click({
 	#
             #Show-Info -IsCI $IsCI -Message "2.1 Enterprise Server installation" -ForegroundColor DarkGreen
 			$ES_Install_Output.text += "2.1 Enterprise Server installation`r`n" 
+
+	####Prep#########
+	[System.Windows.MessageBox]::Show("Please select the relevant intallation file for Enterprise Server `r`nExample: C:\Omada\Install\OIS Enterprise Server.exe ", "Select ES Install File")
+	$ESInstallPath=Get-FileName -initialDirectory "C:\Omada\Install\"
+	$InstallerFolder = Split-Path -Path $ESInstallPath
+	$ESEexe=""
+ 	$RootInstallerFolder = Split-Path -Path $InstallerFolder
+	$logPath = Join-Path -Path $RootInstallerFolder -ChildPath "\Logs"
+	$PSCommandPath = Join-Path -Path $RootInstallerFolder -ChildPath "\DO-UpgradeTools"
+	$ES_Install_Output.text += $PSCommandPath
+	
+	$esFeaturesToInstall="Omada_Enterprise,Omada_Identity_Manager,Tools"
+	
             $args = ("/l*v \""{0}\installlog_es.log\""" -F $logPath)
             $args +=  " SERVICETYPE=\""2\"""
             $args +=  " SERVICEDOMAIN=\""$serviceUserDomain\"""
