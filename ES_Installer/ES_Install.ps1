@@ -140,25 +140,36 @@ param(
 $srv=$ServerName
 $DbName=$DatabaseName
 
-$db = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Database -argumentlist $srv, $DbName  
-$db.Create() 
+If ( ! (Get-module SqlServer ) -And !(Get-Module SqlPS)) {
+Import-Module .\SqlServer\21.1.18080\SqlServer.psm1
+}
+
+$DbExists=Test-SqlConnection -sqlServer $srv -DBName $DbName
+#$ES_Install_Output.text += $DbExists
+##this could also be done before calling the Create-Database function NB!
+	If ($DbExists -eq $true){
+		$ES_Install_Output.text += "The Database $DbName on $srv already exists`r`n"
+	}
+	else {
+		$db = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Database -argumentlist $srv, $DbName  
+		$db.Create() 
 
 
-		$c = "
-		USE [$DBName]
-		declare @dbname varchar(256)
-		declare @sql nvarchar(256)
-		select @dbname=db_name(dbid) from master..sysprocesses where spid=@@SPID
-		set @sql = 'ALTER DATABASE [' + @dbname + '] SET ALLOW_SNAPSHOT_ISOLATION ON'
-		exec sp_executesql @sql
-		set @sql = 'ALTER DATABASE [' + @dbname + '] SET READ_COMMITTED_SNAPSHOT ON'
-		exec sp_executesql @sql
-		;
-            
-       "
+				$c = "
+				USE [$DBName]
+				declare @dbname varchar(256)
+				declare @sql nvarchar(256)
+				select @dbname=db_name(dbid) from master..sysprocesses where spid=@@SPID
+				set @sql = 'ALTER DATABASE [' + @dbname + '] SET ALLOW_SNAPSHOT_ISOLATION ON'
+				exec sp_executesql @sql
+				set @sql = 'ALTER DATABASE [' + @dbname + '] SET READ_COMMITTED_SNAPSHOT ON'
+				exec sp_executesql @sql
+				;
+					
+			   "
 
-Invoke-Sqlcmd -ServerInstance $srv -Query $c
-
+		Invoke-Sqlcmd -ServerInstance $srv -Query $c
+	}
 }#end of function create_database
 
 function Set-ServicesStartAndDependency{
@@ -221,6 +232,25 @@ function Set-ServicesStartAndDependency{
     }
 }
 
+Function Test-SqlConnection([string]$sqlServer, [string]$DBName)
+{
+ $exists = $FALSE
+ try
+ {
+  $conn = New-Object system.Data.SqlClient.SqlConnection
+  $conn.connectionstring = [string]::format("Server={0};Database={1};Integrated Security=SSPI;",$sqlServer,$DBName)
+  $conn.open()
+  $exists = $true
+ }
+ catch
+ {
+  #Write-Error "Failed to connect to DB $DBNAME on $sqlServer"
+  #$ES_Install_Output.text += "The Database $DBNAME on $sqlServer already exists`r`n"
+ }
+ 
+ Return $exists
+}
+
 #READ THE XAML FILE
 [xml]$Form = Get-Content ".\ES_Install.xaml"
 $NR = (New-Object System.Xml.XmlNodeReader $Form)
@@ -272,8 +302,9 @@ $But_ES_Install.Add_Click({
 	$ESServer = $ES_ServerName.Text
 	$ESEUser = $ES_ServiceAccount.Text
 	$MSSQLServerName = $ES_MSSQL_ServerName.Text
+	$MSSQL_ServerName.Text=$MSSQLServerName ####DO THE SAME FOR OPS!!!
 	$ESEUser = $ES_ServiceAccount.Text
-	$ESDB = $ES_DBName.Text
+	$esDBName = $ES_DBName.Text
 	$ESPassword = $ES_ServicePassword.Text
 	$ES_ServicePassword.Text = " "
 	$ESInstallationPath = $ES_InstDir.Text
@@ -281,29 +312,36 @@ $But_ES_Install.Add_Click({
 	#Constants
 	$SQLInstance = $MSSQLServerName
 	$serviceUserDomain=$env:UserDomain
-	$ConnectionString = "Initial Catalog ="+$ESDB+";Integrated Security=SSPI;Data Source="+$MSSQLServerName+";"
+	$ConnectionString = "Initial Catalog ="+$esDBName+";Integrated Security=SSPI;Data Source="+$MSSQLServerName+";"
 	$serviceUser=$ESEUser
 	$serviceUserPassword=$ESPassword
-	$ESServiceName="ROPE_0"
+	$ESServiceName=""#"ROPE_0"
 	$ESDBUser=$serviceUser
-	$ESProductDB=$ESDB
+	$ESProductDB=$esDBName
 	$SQLAdmUser = 'unknown'
 	$SQLAdmPass = '404'
+	$esSourceSystemDBName="Omada Source System Data DB"
+	$esAuditDBName="OISAudit"
 	
 	#Process:
 	#
             #Show-Info -IsCI $IsCI -Message "2.1 Enterprise Server installation" -ForegroundColor DarkGreen
-			$ES_Install_Output.text += "2.1 Enterprise Server installation`r`n" 
+			$ES_Install_Output.text += "***2.1 Enterprise Server installation***`r`n" 
 
 	####Prep#########
 	[System.Windows.MessageBox]::Show("Please select the relevant intallation file for Enterprise Server `r`nExample: C:\Omada\Install\OIS Enterprise Server.exe ", "Select ES Install File")
 	$ESInstallPath=Get-FileName -initialDirectory "C:\Omada\Install\"
 	$InstallerFolder = Split-Path -Path $ESInstallPath
+	$sqlFilePath = Join-Path -Path $ESInstallationPath -ChildPath "\Sql scripts\"
+	#$ES_Install_Output.text += $sqlFilePath
+	$sqlFile_OIS_dbcr=Join-Path -Path $sqlFilePath -ChildPath "dbcr_14_0.sql"
+	$sqlFile_OIS_dbcr_oim=Join-Path -Path $sqlFilePath -ChildPath "dbcr_oim_14_0.sql"
+	$sqlFile_OIS_SourceSystemDB=Join-Path -Path $sqlFilePath -ChildPath "CreateSourceSystemDataDB.sql"
 	$ESEexe=""
  	$RootInstallerFolder = Split-Path -Path $InstallerFolder
 	$logPath = Join-Path -Path $RootInstallerFolder -ChildPath "\Logs"
 	$PSCommandPath = Join-Path -Path $RootInstallerFolder -ChildPath "\DO-UpgradeTools"
-	$ES_Install_Output.text += $PSCommandPath
+	#$ES_Install_Output.text += $PSCommandPath
 	
 	$esFeaturesToInstall="Omada_Enterprise,Omada_Identity_Manager,Tools"
 	
@@ -314,14 +352,62 @@ $But_ES_Install.Add_Click({
             $args +=  " SERVICEPASSWORD=\""$serviceUserPassword\"""
             $args +=  " INSTALLDIR=\""$esInstallationPath\"""
             $args +=  " ADDLOCAL=\""$esFeaturesToInstall\"""
-		$ES_Install_Output.text += $args
+		#$ES_Install_Output.text += $args
+		#minimum .Net 4.6.1!!!!
+			#$t = Start-Process -Wait -FilePath "$RoPEInstallPath" -ArgumentList " /V""$args /qn"" " -PassThru
             #$t = Start-Process -Wait -WorkingDirectory $esInstallerPath -FilePath $esExe -ArgumentList " /V""$args /qn"" " -PassThru -WindowStyle Hidden
+			$t = Start-Process -Wait -FilePath $ESInstallPath -ArgumentList " /V""$args /qn"" " -PassThru -WindowStyle Hidden
 
 <# 			if ($null -eq (Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*  | Where-Object { $_.DisplayName -contains $esName} )){
 				Show-Info -IsCI $IsCI -Message ("{0} was not installed. Please check installation log for details - {1}\installlog_es.log" -f $esName, $logPath) -ForegroundColor Red
 				break
 			} #>
+	#Create databases
+	        $ES_Install_Output.text +="Creating DB {0}...`r`n" -F $esDBName
+            #Show-Info -IsCI $IsCI -Message ("main script: Use SQL user: {0} {1}" -F $useSQLUser, $SQLAdmUser)
+            Create-Database -ServerName $SQLInstance -DatabaseName $esDBName #-SnapshotIsolation $false -DBLogin ("{0}\{1}" -F $serviceUserDomain, $esDBUser) -DBAdmin $SQLAdmUser -DBPass $SQLAdmPass -useSQLUser $useSQLUser -IsCI $IsCI
 
+            $ES_Install_Output.text += "Creating Source System Data DB...`r`n" 
+            Create-Database -ServerName $SQLInstance -DatabaseName $esSourceSystemDBName #-SnapshotIsolation $false -DBLogin ("{0}\{1}" -F $serviceUserDomain, $esDBUser) -DBAdmin $SQLAdmUser -DBPass $SQLAdmPass -useSQLUser $useSQLUser -IsCI $IsCI
+
+            $ES_Install_Output.text += "Creating Audit DB...`r`n" 
+            Create-Database -ServerName $SQLInstance -DatabaseName $esAuditDBName #-SnapshotIsolation $false -DBLogin ("{0}\{1}" -F $serviceUserDomain, $esDBUser) -DBAdmin $SQLAdmUser -DBPass $SQLAdmPass -useSQLUser $useSQLUser -IsCI $IsCI
+			
+			$ES_Install_Output.text += "`r`n**Running initial SQL scripts...**`r`n" 
+			#$ES_Install_Output.text += "Running {0} of {1} script(s) in {3}: {2}" -F ($i + 1),$nodes.Count, $sqlFile, $sqlDB) -ForegroundColor Yellow
+			
+			#C:\Program Files\Omada Identity Suite\Enterprise Server\Sql scripts\dbcr_14_0.sql
+			if ((Test-Path $sqlFile_OIS_dbcr) -eq $true){
+				$c = Get-Content -Encoding UTF8 -path $sqlFile_OIS_dbcr -Raw
+				$c = $c.Replace("DOMAIN\",("{0}\" -F $serviceUserDomain))
+					Invoke-Sqlcmd -ServerInstance $SQLInstance -Database $esDBName -QueryTimeout 300 -query $c
+			}
+			else {
+				$ES_Install_Output.text += "The file {0} cannot be found.`r`n" -F $sqlFile_OIS_dbcr
+			}
+			#C:\Program Files\Omada Identity Suite\Enterprise Server\Sql scripts\dbcr_oim_14_0.sql
+				if ((Test-Path $sqlFile_OIS_dbcr_oim) -eq $true){
+					$c = Get-Content -Encoding UTF8 -path $sqlFile_OIS_dbcr_oim -Raw
+					$c = $c.Replace("DOMAIN\",("{0}\" -F $serviceUserDomain))
+						Invoke-Sqlcmd -ServerInstance $SQLInstance -Database $esDBName -QueryTimeout 300 -query $c
+				}
+				else {
+					$ES_Install_Output.text += "The file {0} cannot be found.`r`n" -F $sqlFile_OIS_dbcr_oim
+				}
+				#C:\Program Files\Omada Identity Suite\Enterprise Server\Sql scripts\CreateSourceSystemDataDB.sql
+					if ((Test-Path $sqlFile_OIS_SourceSystemDB) -eq $true){
+						$c = Get-Content -Encoding UTF8 -path $sqlFile_OIS_SourceSystemDB -Raw
+						$c = $c.Replace("DOMAIN\",("{0}\" -F $serviceUserDomain))
+							Invoke-Sqlcmd -ServerInstance $SQLInstance -Database $esSourceSystemDBName -QueryTimeout 300 -query $c
+					}
+					else {
+						$ES_Install_Output.text += "The file {0} cannot be found.`r`n" -F $sqlFile_OIS_SourceSystemDB
+					}
+				#$ES_Install_Output.text += "Running initial SQL scripts..." 
+				#$initialScripts = $xmlcfg.SelectNodes("/Configuration/Version/ES/DBInitialScripts")
+
+$ES_Install_Output.text += "`r`n***Installation of Enterprise Server finished.***`r`n"
+$ES_Install_Output.text += "`r`n*************************************************`r`n"
 })
 
 ##INSTALL RoPE#################################

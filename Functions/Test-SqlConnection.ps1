@@ -13,16 +13,16 @@ param(
     $ErrorActionPreference = 'Stop'
 
     try {
-        $userName = $Credential.UserName
-        $password = $Credential.GetNetworkCredential().Password
+        #$userName = $Credential.UserName
+        #$password = $Credential.GetNetworkCredential().Password
         #$connectionString = 'Data Source={0};database={1};User ID={2};Password={3}' -f $ServerName,$DatabaseName,$userName,$password
 		$connectionString = 'Data Source={0};database={1};Integrated Security=True"' -f $ServerName,$DatabaseName
         $sqlConnection = New-Object System.Data.SqlClient.SqlConnection $ConnectionString
-        $sqlConnection.Open()
+        #$sqlConnection.Open()
         ## This will run if the Open() method does not throw an exception
-        $true
+        #$true
     } catch {
-        $false
+        #$false
     } finally {
         ## Close the connection when we're done
         $sqlConnection.Close()
