@@ -342,7 +342,15 @@ $ServerName = "localhost"
 		   394271 {$NetFrameworkVersion = "Net Framework version 4.6.1 installed"}
 		   394802 {$NetFrameworkVersion = "Net Framework version 4.6.2 installed"}
 		   394806 {$NetFrameworkVersion = "Net Framework version 4.6.2 installed"}
-		   Default {$NetFrameworkVersion = "Net Framework 4.5 or later is not installed."}
+		   460798 {$NetFrameworkVersion = "Net Framework version 4.7 installed"}
+		   460805 {$NetFrameworkVersion = "Net Framework version 4.7 installed"}
+		   461308 {$NetFrameworkVersion = "Net Framework version 4.7.1 installed"}
+		   461310 {$NetFrameworkVersion = "Net Framework version 4.7.1 installed"}
+		   461808 {$NetFrameworkVersion = "Net Framework version 4.7.2 installed"}
+		   461814 {$NetFrameworkVersion = "Net Framework version 4.7.2 installed"}
+		   528040 {$NetFrameworkVersion = "Net Framework version 4.8 installed"}
+		   528049 {$NetFrameworkVersion = "Net Framework version 4.8 installed"}
+		   Default {$NetFrameworkVersion = "Net Framework 4.6 or later is not installed."}
 		} 
 	If ($NetFrameworkVersion -Match "not"){
 		Write-Host "Net Framework 4.5 or later is not installed." -ForegroundColor Red
