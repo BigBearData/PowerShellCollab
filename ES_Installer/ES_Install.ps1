@@ -268,6 +268,239 @@ catch{
 Import-Module OISEssential
 } #>
 
+Function Run-SqlScript {
+param(
+$FileName,
+$SQLInstance,
+$DBName,
+$serviceUserDomain=$env:UserDomain
+)
+			#C:\Program Files\Omada Identity Suite\Enterprise Server\Sql scripts\dbcr_14_0.sql
+			if ((Test-Path $FileName) -eq $true){
+				$c = Get-Content -Encoding UTF8 -path $FileName -Raw
+				$c = $c.Replace("DOMAIN\",("{0}\" -F $serviceUserDomain))
+					Invoke-Sqlcmd -ServerInstance $SQLInstance -Database $DBName -QueryTimeout 300 -query $c | Out-Null
+			}
+			else {
+				$ES_Install_Output.text += "The file {0} cannot be found.`r`n" -F $FileName
+			}
+}
+
+Function New-OISWebSite{
+    <#
+    .SYNOPSIS
+        Creates web site in local iis
+    .DESCRIPTION
+        Creates web site and may remove also app pool
+    .PARAMETER IISAppPoolName
+        App Pool Name
+    .PARAMETER IISWebSite
+        Web site name
+    .PARAMETER WebSitePath
+        PAth to web site
+    .PARAMETER WebSiteBinding
+        Binding added to web site
+    .PARAMETER Full
+        If app pool should be also created
+    .PARAMETER IsCI
+        If this a manual install or CI triggered
+	.PARAMETER Port
+		Port number of web site binding - if needed
+	.PARAMETER SetAuthenticationSettings
+		If the default authentication settings of web site should be changed
+	.PARAMETER isDemo
+		If this a demo creation - then remove default bindings
+	.PARAMETER isTA
+		if this is a special case of demo creation - TA
+
+    .EXAMPLE
+        New-OISWebSite -IISAppPoolName "Enterprise server" -IISWebSite "Enterprise Server" -AppPool $true -WebSitePath "C:\Program Files\Omada Identity Suite\Enterprise Server 12\website" -WebSiteBinding "enterpriseserver" -Firewall $true -AppPoolUser "megamart\srvc_omada" -AppPoolUserPassword "Omada12345" -CertThumbprint '629159577035C3939AE852EB29468DEB116424E8'
+    #>
+    [cmdletbinding(SupportsShouldProcess)]
+    Param(
+    [Parameter (Mandatory)]
+    [string]$IISWebSite,
+    
+    [Parameter (Mandatory)]
+    [string]$IISAppPoolName,
+
+    [Parameter (Mandatory)]
+    [string]$WebSitePath,
+
+    [Parameter (Mandatory)]
+    [string]$WebSiteBinding,
+
+    [Parameter ()]
+    [string]$AppPool = $false,
+
+    [Parameter ()]
+    [string]$Firewall = $false,
+
+    [Parameter (Mandatory)]
+    [string]$AppPoolUser,
+
+    [Parameter (Mandatory)]
+    [string]$AppPoolUserPassword,
+
+	[string]$CertThumbprint = '',
+    [Boolean]$IsCI = $false,
+	[Parameter ()]
+    [int]$Port = 80,
+	
+	[Parameter ()]
+    [bool]$SetAuthenticationSettings = $true,
+
+	[bool]$isDemo = $false,
+	[bool]$isTA = $false
+    )
+
+    if ($AppPool -eq $true){
+        if(Test-Path IIS:\AppPools\$IISAppPoolName){
+            $ES_Install_Output.text +=  ("App pool {0} exists, skipping.`r`n" -F $IISAppPoolName)#-ForegroundColor Red
+        }else{
+            $ES_Install_Output.text +=  ("Creating app pool {0}...`r`n" -F $IISAppPoolName)#-ForegroundColor Yellow
+            $t = New-WebAppPool -Name $IISAppPoolName
+            Set-ItemProperty iis:\apppools\$IISAppPoolName -name processModel -value @{userName=$AppPoolUser;password=$AppPoolUserPassword;identitytype=3}
+            Sleep -Seconds 5
+            $ES_Install_Output.text +=  "App pool created`r`n"#-ForegroundColor Green
+        }
+    }
+
+    $t = (Get-Website –Name $IISWebSite)
+    if ($t -eq $null){
+        $ES_Install_Output.text +=  ("Creating web site {0}...`r`n" -F $IISWebSite)#-ForegroundColor Yellow
+        if ($CertThumbprint.Length -gt 0){
+            $ES_Install_Output.text +=  "Adding https binding`r`n"#-ForegroundColor Yellow 
+            Get-Item IIS:\SslBindings\*!443 | Remove-Item
+			$certificate = Get-ChildItem Cert:\LocalMachine\My | Where-Object {$_.Thumbprint -eq $CertThumbprint}
+			$t = New-Item iis:\Sites\$IISWebSite -PhysicalPath $WebSitePath -ApplicationPool $IISAppPoolName -AutoStart $true -Bindings @{protocol="http";bindingInformation="*:" + [string]$Port + ":$WebSiteBinding"}
+			New-WebBinding -Name $IISWebSite  -Protocol "https" -Port 443 -HostHeader $WebSiteBinding -SslFlags 1
+            $t = Get-Item -Path ("IIS:\SslBindings\*!443!{0}" -F $WebSiteBinding)
+			if ($t -eq $null){
+				$t = New-Item -Path ("IIS:\SslBindings\!443!{0}" -F $WebSiteBinding) -Value $certificate -SSLFlags 1
+			}
+			
+		}
+		else{
+			$ES_Install_Output.text +=  "Adding http binding`r`n"#-ForegroundColor Yellow 
+			$ES_Install_Output.text +=  ("Adding binding for {0}`r`n" -f $ip)#-ForegroundColor Yellow 
+			$t = New-Item iis:\Sites\$IISWebSite -PhysicalPath $WebSitePath -Bindings @{protocol="http";bindingInformation="*:" + [string]$Port + ":$WebSiteBinding"} -ApplicationPool $IISAppPoolName -AutoStart $true
+			if ((Get-NetIPAddress | Where-Object {$_.PrefixOrigin -eq 'Dhcp'}) -ne $null){
+				$ip = ((Get-NetIPAddress -PrefixOrigin "dhcp").IPAddress | Where-Object {$_ -ne "127.0.0.1"})
+				$ES_Install_Output.text +=  ("Adding binding for {0}`r`n" -f $ip)#-ForegroundColor Yellow 
+				if ($ip -ne $null){
+					$ES_Install_Output.text +=  ("Binding added {0}`r`n" -f $ip)#-ForegroundColor Green
+					New-WebBinding -Name $IISWebSite -IPAddress $ip -Port 80 -HostHeader '' | Out-Null
+				}else{
+					$ES_Install_Output.text +=  ("Binding not added {0}`r`n" -f $ip)#-ForegroundColor Red
+					$ES_Install_Output.text +=  "Unable to add binding to ES web site`r`n"#-ForegroundColor Yellow
+				}
+			}else{
+				$ES_Install_Output.text +=  "Unable to add binding to ES web site, dhcp address not found`r`n"#-ForegroundColor Yellow
+			}
+			
+		}		
+        $ES_Install_Output.text +=  "Web site created`r`n"#-ForegroundColor Green
+    
+    }
+    else{
+        $ES_Install_Output.text +=  ("Web site {0} exists, skipping`r`n" -F $IISWebSite)#-ForegroundColor red
+    }
+
+	if($isDemo){
+        #change bindings so ES portal will be the "default" page
+		try{
+			$t = Get-item 'IIS:\Sites\Default Web Site'
+		}catch{}
+		if($t -ne $null){
+			try{
+				Remove-WebBinding -Name $t.name -Protocol 'https'
+			}catch{}
+			try{
+				Remove-WebBinding -Name $t.name -Protocol 'http' -Port 80 -HostHeader '*'
+			}catch{}
+			try{
+				Remove-WebBinding -Name $t.name -Protocol 'http' -Port 80 -HostHeader '127.0.0.1'
+			}catch{}
+			$ES_Install_Output.text +=  "Removed default bindings for Default Web Page`r`n"#-ForegroundColor Green
+			#add binding for "default" address - FQDN of computer, workaround so exchange will be still working
+			$defaultBinding = (Get-WmiObject win32_computersystem).DNSHostName+"."+(Get-WmiObject win32_computersystem).Domain
+			$tt = Get-WebBinding -Name $t.name -Protocol 'http' -Port 80 -HostHeader $defaultBinding
+			if ($tt -eq $null){
+				New-WebBinding -Name $t.name -Protocol 'http' -Port 80 -HostHeader $defaultBinding
+			}
+			$tt = Get-WebBinding -Name $t.name -Protocol 'http' -Port 80 -HostHeader (Get-WmiObject win32_computersystem).DNSHostName
+			if ($tt -eq $null){
+				New-WebBinding -Name $t.name -Protocol 'http' -Port 80 -HostHeader (Get-WmiObject win32_computersystem).DNSHostName
+			}
+        
+		}
+
+		$t = (Get-Website –Name $IISWebSite)
+		if($t -ne $null){
+			#New-WebBinding -Name $t.name -Protocol 'http' -Port 80 -HostHeader '*'
+			$ip = ((Get-NetIPAddress -PrefixOrigin "dhcp").IPAddress | Where-Object {$_ -ne "127.0.0.1"})
+			New-WebBinding -Name $t.name -Protocol 'http' -Port 80 -HostHeader $ip
+			if ($CertThumbprint.Length -gt 0){
+				$certificate = Get-ChildItem Cert:\LocalMachine\My | Where-Object {$_.Thumbprint -eq $CertThumbprint}
+				New-WebBinding -Name $t.name  -Protocol "https" -Port 443 -HostHeader '*' -SslFlags 1
+				$ES_Install_Output.text +=  ("Added '*' bindings for {0}`r`n" -f $IISWebSite)#-ForegroundColor Green
+			}
+			
+		}
+		Remove-WebConfigurationProperty //defaultDocument ("IIS:\sites\" + $IISWebSite) -name files.collection -atIndex 0
+		Add-WebConfiguration //defaultDocument/files ("IIS:\sites\" +  $IISWebSite) -atIndex 0 -Value @{value="main.aspx"}
+    }
+	if ($SetAuthenticationSettings)
+	{
+		if (!($isTA)){
+			$ES_Install_Output.text +=  "Disable anonymous authentication`r`n"#-ForegroundColor Yellow
+			$t = Set-WebConfigurationProperty -filter "/system.WebServer/security/authentication/AnonymousAuthentication" -name Enabled -location $IISWebSite -Value $false
+		}else{
+			$ES_Install_Output.text +=  "This is demo installation, anonymous authentication will be enabled`r`n"#-ForegroundColor Yellow
+		}
+    	
+
+    	$ES_Install_Output.text +=  "Enable and configure windows authentication`r`n"#-ForegroundColor Yellow
+    	$t = Set-WebConfigurationProperty -filter "/system.WebServer/security/authentication/WindowsAuthentication" -name Enabled -location $IISWebSite -Value $true
+    	$t = Set-WebConfigurationProperty -filter "/system.WebServer/security/authentication/WindowsAuthentication/extendedProtection" -name tokenChecking -location $IISWebSite -Value "Require"
+    	$t = Set-WebConfigurationProperty -filter "/system.WebServer/security/authentication/WindowsAuthentication/extendedProtection" -name flags -location $IISWebSite -Value "None"
+    	$t = Set-WebConfigurationProperty -filter "/system.WebServer/security/authentication/WindowsAuthentication" -name useKernelMode -location $IISWebSite -Value $true
+
+		$ES_Install_Output.text +=  "Enable basic authentication`r`n"#-ForegroundColor Yellow
+    	$t = Set-WebConfigurationProperty -filter "/system.WebServer/security/authentication/BasicAuthentication" -name Enabled -location $IISWebSite -Value $true
+		$ES_Install_Output.text +=  "Add web site to trusted zone`r`n"#-ForegroundColor Yellow
+		$t = New-PSDrive -name HKCU -PSProvider Registry -root HKEY_CURRENT_USER -ErrorAction SilentlyContinue
+		if ((Test-Path ("HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains\{0}" -f $WebSiteBinding)) -eq $true){
+	        $ES_Install_Output.text +=  "No need to update registry, skipping`r`n"#-ForegroundColor Green
+    	}
+		else{
+			#sometimes the key "EscDomains" is missing from the registry - check, so it will not cause error
+			if (!(Test-Path ("HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains"))) {
+				$t = New-Item -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\" -Name "EscDomains"
+				$ES_Install_Output.text +=  "Added registry key: EscDomains`r`n"#-ForegroundColor Green
+			}
+			$t = New-Item -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains" -Name $WebSiteBinding
+			$t = New-ItemProperty -Path ("HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains\{0}" -f $WebSiteBinding) -PropertyType DWORD -Name "http" -Value "1"
+			$ES_Install_Output.text +=  "Value added to registry`r`n"#-ForegroundColor Green
+		}
+		$t = Remove-PSDrive -Name HKCU
+	}
+
+	if ($Firewall -eq $true){
+        if ($CertThumbprint.Length -gt 0){
+    	    $t = New-NetFirewallRule -DisplayName "Allow HTTPS In" -Direction Inbound -LocalPort 443 -Protocol TCP -Action Allow
+         	$ES_Install_Output.text +=  "Added firewall rule for incoming HTTPS traffic`r`n"#-ForegroundColor Green
+    	}
+    	else{
+        	$t = New-NetFirewallRule -DisplayName "Allow HTTP In" -Direction Inbound -LocalPort 80 -Protocol TCP -Action Allow
+        	$ES_Install_Output.text +=  "Added firewall rule for incoming HTTP traffic`r`n"#-ForegroundColor Green
+    	}
+    }
+		
+}
+
+
 #VARIABLES AND DEFINITIONS
 
 #RoPE Variables###################################################
@@ -281,20 +514,26 @@ $RoPE_Install_Output = $Win.FindName("RoPE_Install_Output")
 $RoPE_InstDir = $Win.FindName("RoPE_InstDir")
 
 $RoPE_ServerName.text = $Env:Computername
+$ropeServiceName="ROPE_0"
 
 #ES Variables########################################################
 $ES_ServerName = $Win.FindName("ES_ServerName")
 $ES_ServiceAccount = $Win.FindName("ES_ServiceAccount")
 $ES_MSSQL_ServerName = $Win.FindName("ES_MSSQL_ServerName")
 $But_ES_Install = $Win.FindName("But_ES_Install")
+$But_Clear = $Win.FindName("But_Clear")
 $ES_DBName = $Win.FindName("ES_DBName")
 $ES_ServicePassword = $Win.FindName("ES_ServicePassword")
 $ES_Install_Output = $Win.FindName("ES_Install_Output")
 $ES_InstDir = $Win.FindName("ES_InstDir")
 
 $ES_ServerName.text = $Env:Computername
+$esTimerService="OETSVC"#"ROPE_0"
 
 ################################################
+$But_Clear.Add_Click({
+$ES_Install_Output.text =""
+})
 
 ##INSTALL Enterprise Server#################################
 $But_ES_Install.Add_Click({
@@ -308,6 +547,7 @@ $But_ES_Install.Add_Click({
 	$ESPassword = $ES_ServicePassword.Text
 	$ES_ServicePassword.Text = " "
 	$ESInstallationPath = $ES_InstDir.Text
+	$LicenseKey =$ES_LicenseKey.Text
 	
 	#Constants
 	$SQLInstance = $MSSQLServerName
@@ -315,7 +555,10 @@ $But_ES_Install.Add_Click({
 	$ConnectionString = "Initial Catalog ="+$esDBName+";Integrated Security=SSPI;Data Source="+$MSSQLServerName+";"
 	$serviceUser=$ESEUser
 	$serviceUserPassword=$ESPassword
-	$ESServiceName=""#"ROPE_0"
+	$esAppPool = "Enterprise server" 
+	$esWebSite = "Enterprise Server"
+	$esBinding ="enterpriseserver"
+	
 	$ESDBUser=$serviceUser
 	$ESProductDB=$esDBName
 	$SQLAdmUser = 'unknown'
@@ -325,11 +568,12 @@ $But_ES_Install.Add_Click({
 	
 	#Process:
 	#
-            #Show-Info -IsCI $IsCI -Message "2.1 Enterprise Server installation" -ForegroundColor DarkGreen
+            #Show-Info -IsCI $IsCI -Message "2.1 Enterprise Server installation"#-ForegroundColor DarkGreen
 			$ES_Install_Output.text += "***2.1 Enterprise Server installation***`r`n" 
 
 	####Prep#########
 	[System.Windows.MessageBox]::Show("Please select the relevant intallation file for Enterprise Server `r`nExample: C:\Omada\Install\OIS Enterprise Server.exe ", "Select ES Install File")
+	$ES_Install_Output.text += "Installation in progress...`r`n"
 	$ESInstallPath=Get-FileName -initialDirectory "C:\Omada\Install\"
 	$InstallerFolder = Split-Path -Path $ESInstallPath
 	$sqlFilePath = Join-Path -Path $ESInstallationPath -ChildPath "\Sql scripts\"
@@ -356,8 +600,9 @@ $But_ES_Install.Add_Click({
 		#minimum .Net 4.6.1!!!!
 			#$t = Start-Process -Wait -FilePath "$RoPEInstallPath" -ArgumentList " /V""$args /qn"" " -PassThru
             #$t = Start-Process -Wait -WorkingDirectory $esInstallerPath -FilePath $esExe -ArgumentList " /V""$args /qn"" " -PassThru -WindowStyle Hidden
+			#$ES_Install_Output.text += "Installation in progress...`r`n"
 			$t = Start-Process -Wait -FilePath $ESInstallPath -ArgumentList " /V""$args /qn"" " -PassThru -WindowStyle Hidden
-
+			
 <# 			if ($null -eq (Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*  | Where-Object { $_.DisplayName -contains $esName} )){
 				Show-Info -IsCI $IsCI -Message ("{0} was not installed. Please check installation log for details - {1}\installlog_es.log" -f $esName, $logPath) -ForegroundColor Red
 				break
@@ -365,22 +610,48 @@ $But_ES_Install.Add_Click({
 	#Create databases
 	        $ES_Install_Output.text +="Creating DB {0}...`r`n" -F $esDBName
             #Show-Info -IsCI $IsCI -Message ("main script: Use SQL user: {0} {1}" -F $useSQLUser, $SQLAdmUser)
-            Create-Database -ServerName $SQLInstance -DatabaseName $esDBName #-SnapshotIsolation $false -DBLogin ("{0}\{1}" -F $serviceUserDomain, $esDBUser) -DBAdmin $SQLAdmUser -DBPass $SQLAdmPass -useSQLUser $useSQLUser -IsCI $IsCI
+			$esDbExists=Test-SqlConnection -sqlServer $SQLInstance -DBName $esDBName
+				If ($esDbExists -eq $true){
+					$ES_Install_Output.text += "The Database $esDBName on $SQLInstance already exists`r`n"
+				}
+				else {
+					Create-Database -ServerName $SQLInstance -DatabaseName $esDBName #-SnapshotIsolation $false -DBLogin ("{0}\{1}" -F $serviceUserDomain, $esDBUser) -DBAdmin $SQLAdmUser -DBPass $SQLAdmPass -useSQLUser $useSQLUser -IsCI $IsCI
+					Run-SqlScript -FileName $sqlFile_OIS_dbcr -SQLInstance  $SQLInstance -DBName $esDBName
+					Run-SqlScript -FileName $sqlFile_OIS_dbcr_oim -SQLInstance  $SQLInstance -DBName $esDBName
+				}
 
             $ES_Install_Output.text += "Creating Source System Data DB...`r`n" 
-            Create-Database -ServerName $SQLInstance -DatabaseName $esSourceSystemDBName #-SnapshotIsolation $false -DBLogin ("{0}\{1}" -F $serviceUserDomain, $esDBUser) -DBAdmin $SQLAdmUser -DBPass $SQLAdmPass -useSQLUser $useSQLUser -IsCI $IsCI
+			$esSourceDbExists=Test-SqlConnection -sqlServer $SQLInstance -DBName $esSourceSystemDBName
+				If ($esSourceDbExists -eq $true){
+					$ES_Install_Output.text += "The Database $esSourceSystemDBName on $SQLInstance already exists`r`n"
+				}
+				else {
+					Create-Database -ServerName $SQLInstance -DatabaseName $esSourceSystemDBName #-SnapshotIsolation $false -DBLogin ("{0}\{1}" -F $serviceUserDomain, $esDBUser) -DBAdmin $SQLAdmUser -DBPass $SQLAdmPass -useSQLUser $useSQLUser -IsCI $IsCI
+					Run-SqlScript -FileName $sqlFile_OIS_SourceSystemDB -SQLInstance  $SQLInstance -DBName $esSourceSystemDBName
+				}
 
             $ES_Install_Output.text += "Creating Audit DB...`r`n" 
-            Create-Database -ServerName $SQLInstance -DatabaseName $esAuditDBName #-SnapshotIsolation $false -DBLogin ("{0}\{1}" -F $serviceUserDomain, $esDBUser) -DBAdmin $SQLAdmUser -DBPass $SQLAdmPass -useSQLUser $useSQLUser -IsCI $IsCI
+			$AuditDbExists=Test-SqlConnection -sqlServer $SQLInstance -DBName $esAuditDBName
+				If ($AuditDbExists -eq $true){
+					$ES_Install_Output.text += "The Database $esAuditDBName on $SQLInstance already exists`r`n"
+				}
+				else {
+					Create-Database -ServerName $SQLInstance -DatabaseName $esAuditDBName #-SnapshotIsolation $false -DBLogin ("{0}\{1}" -F $serviceUserDomain, $esDBUser) -DBAdmin $SQLAdmUser -DBPass $SQLAdmPass -useSQLUser $useSQLUser -IsCI $IsCI
+				}
 			
-			$ES_Install_Output.text += "`r`n**Running initial SQL scripts...**`r`n" 
+<# 			$ES_Install_Output.text += "`r`n**Running initial SQL scripts...**`r`n" 
 			#$ES_Install_Output.text += "Running {0} of {1} script(s) in {3}: {2}" -F ($i + 1),$nodes.Count, $sqlFile, $sqlDB) -ForegroundColor Yellow
 			
+			#Run SQL Scripts
 			#C:\Program Files\Omada Identity Suite\Enterprise Server\Sql scripts\dbcr_14_0.sql
 			if ((Test-Path $sqlFile_OIS_dbcr) -eq $true){
 				$c = Get-Content -Encoding UTF8 -path $sqlFile_OIS_dbcr -Raw
 				$c = $c.Replace("DOMAIN\",("{0}\" -F $serviceUserDomain))
-					Invoke-Sqlcmd -ServerInstance $SQLInstance -Database $esDBName -QueryTimeout 300 -query $c
+					Try {
+					Invoke-Sqlcmd -ServerInstance $SQLInstance -Database $esDBName -QueryTimeout 300 -query $c | Out-Null
+					} Catch {
+					$ES_Install_Output.text += "Error when running sql file $sqlFile_OIS_dbcr. The script may already been run.`r`n"
+					}
 			}
 			else {
 				$ES_Install_Output.text += "The file {0} cannot be found.`r`n" -F $sqlFile_OIS_dbcr
@@ -389,7 +660,11 @@ $But_ES_Install.Add_Click({
 				if ((Test-Path $sqlFile_OIS_dbcr_oim) -eq $true){
 					$c = Get-Content -Encoding UTF8 -path $sqlFile_OIS_dbcr_oim -Raw
 					$c = $c.Replace("DOMAIN\",("{0}\" -F $serviceUserDomain))
-						Invoke-Sqlcmd -ServerInstance $SQLInstance -Database $esDBName -QueryTimeout 300 -query $c
+						Try {
+							Invoke-Sqlcmd -ServerInstance $SQLInstance -Database $esDBName -QueryTimeout 300 -query $c | Out-Null
+						} Catch {
+						$ES_Install_Output.text += "Error when running sql file $sqlFile_OIS_dbcr_oim. The script may already been run.`r`n"
+						}
 				}
 				else {
 					$ES_Install_Output.text += "The file {0} cannot be found.`r`n" -F $sqlFile_OIS_dbcr_oim
@@ -398,16 +673,53 @@ $But_ES_Install.Add_Click({
 					if ((Test-Path $sqlFile_OIS_SourceSystemDB) -eq $true){
 						$c = Get-Content -Encoding UTF8 -path $sqlFile_OIS_SourceSystemDB -Raw
 						$c = $c.Replace("DOMAIN\",("{0}\" -F $serviceUserDomain))
-							Invoke-Sqlcmd -ServerInstance $SQLInstance -Database $esSourceSystemDBName -QueryTimeout 300 -query $c
+							Try {						
+							Invoke-Sqlcmd -ServerInstance $SQLInstance -Database $esSourceSystemDBName -QueryTimeout 300 -query $c | Out-Null
+							} Catch {
+							$ES_Install_Output.text += "Error when running sql file $sqlFile_OIS_SourceSystemDB. The script may already been run.`r`n"
+							}							
 					}
 					else {
 						$ES_Install_Output.text += "The file {0} cannot be found.`r`n" -F $sqlFile_OIS_SourceSystemDB
 					}
 				#$ES_Install_Output.text += "Running initial SQL scripts..." 
-				#$initialScripts = $xmlcfg.SelectNodes("/Configuration/Version/ES/DBInitialScripts")
+				#$initialScripts = $xmlcfg.SelectNodes("/Configuration/Version/ES/DBInitialScripts") #>
+				
+	#config AuthenticationType in tblCustomerAuth
+	Restart-Service -ServiceName ("*{0}*" -f $esTimerService) #-Action "Start"
+	$ES_Install_Output.text += "Generating additional columns in tblCustomer...`r`n" 
+	Start-Sleep -s 10
+	$c = "Update dbo.tblCustomerAuth SET AuthenticationType = 'Integrated' WHERE CustomerID = 1000;"
+    Invoke-Sqlcmd -ServerInstance $SQLInstance -Database $esDBName -QueryTimeout 300 -query $c #-inputfile $sqlFile
+    Stop-Service -ServiceName ("*{0}*" -f $esTimerService) #-Action "Stop"
+	
+	#Add licence $LicenseKey
+	If ($LicenseKey.Length -gt 10){ 	#THIS MAY WORK!
+	$ES_Install_Output.text +=  "Adding licence...`r`n" 
+	#Add-Licence -DBInstance $SQLInstance -DBName $esDBName -LicenseKey $cfgVersion.OIS.LicenseKey -User $SQLAdmUser -Password $SQLAdmPass -useSQLuser $useSQLUser -IsCI $IsCI
+	Add-Licence -DBInstance $SQLInstance -DBName $esDBName -LicenseKey $LicenseKey -User $SQLAdmUser -Password $SQLAdmPass -useSQLuser $false
+	
+	}
+	else {
+	[System.Windows.MessageBox]::Show("No License Key provided. `r`nLicence Key will need to be installed manually.", "Missing Values")
+	}
+
+##Create Web Site###########################################################################
+$ES_Install_Output.text += "`r`n***2.4 Creating a web site for Enterprise Server.***`r`n"
+			$c = ("Update tblUser set UserName=UPPER('{0}') where UserName='ADMINISTRATOR'" -F $env:USERNAME)
+            invoke-sqlcmd -ServerInstance $SQLInstance -query $c -database $esDBName
+			
+            $esWebSitePath = (Join-Path -Path $esInstallationPath -ChildPath "website")
+            $u = ("{0}\{1}" -F $serviceUserDomain, $serviceUser)
+            #$t = New-OISWebSite -IISAppPoolName $esAppPool -IISWebSite $esWebSite -AppPool $true -WebSitePath $esWebSitePath -WebSiteBinding $esBinding -Firewall $true -AppPoolUser $u -AppPoolUserPassword $serviceUserPassword -CertThumbprint "" #-IsCI $IsCI -isDemo $demoEnabled -isTA $demoTA
+			#New-OISWebSite -IISAppPoolName "Enterprise server" -IISWebSite "Enterprise Server" -AppPool $true -WebSitePath "C:\Program Files\Omada Identity Suite\Enterprise Server 12\website" -WebSiteBinding "enterpriseserver" -Firewall $true -AppPoolUser "megamart\srvc_omada" -AppPoolUserPassword "Omada12345" -CertThumbprint '629159577035C3939AE852EB29468DEB116424E8'
+            #Show-Info -IsCI $IsCI -Message "Starting a web site..." -ForegroundColor Yello
+			
+
+
 
 $ES_Install_Output.text += "`r`n***Installation of Enterprise Server finished.***`r`n"
-$ES_Install_Output.text += "`r`n*************************************************`r`n"
+$ES_Install_Output.text += "*************************************************`r`n"
 })
 
 ##INSTALL RoPE#################################
@@ -429,7 +741,7 @@ $But_RoPE_Install.Add_Click({
 	$ConnectionString = "Initial Catalog ="+$RoPEDB+";Integrated Security=SSPI;Data Source="+$MSSQLServerName+";"
 	$serviceUser=$RoPEUser
 	$serviceUserPassword=$RoPEPassword
-	$ropeServiceName="ROPE_0"
+	
 	$ropeDBUser=$serviceUser
 	$RoPEProductDB=$RoPEDB
 	$SQLAdmUser = 'unknown'
