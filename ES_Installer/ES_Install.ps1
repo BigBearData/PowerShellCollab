@@ -284,92 +284,63 @@ $serviceUserDomain=$env:UserDomain
 			else {
 				$ES_Install_Output.text += "The file {0} cannot be found.`r`n" -F $FileName
 			}
-}
+} #end of function run-SqlScript
 
-Function New-OISWebSite{
-    <#
-    .SYNOPSIS
-        Creates web site in local iis
-    .DESCRIPTION
-        Creates web site and may remove also app pool
-    .PARAMETER IISAppPoolName
-        App Pool Name
-    .PARAMETER IISWebSite
-        Web site name
-    .PARAMETER WebSitePath
-        PAth to web site
-    .PARAMETER WebSiteBinding
-        Binding added to web site
-    .PARAMETER Full
-        If app pool should be also created
-    .PARAMETER IsCI
-        If this a manual install or CI triggered
-	.PARAMETER Port
-		Port number of web site binding - if needed
-	.PARAMETER SetAuthenticationSettings
-		If the default authentication settings of web site should be changed
-	.PARAMETER isDemo
-		If this a demo creation - then remove default bindings
-	.PARAMETER isTA
-		if this is a special case of demo creation - TA
+Function New-OISWebSite {
+[cmdletbinding(SupportsShouldProcess)]
+Param(
+[Parameter (Mandatory)]
+[string]$IISWebSite,
 
-    .EXAMPLE
-        New-OISWebSite -IISAppPoolName "Enterprise server" -IISWebSite "Enterprise Server" -AppPool $true -WebSitePath "C:\Program Files\Omada Identity Suite\Enterprise Server 12\website" -WebSiteBinding "enterpriseserver" -Firewall $true -AppPoolUser "megamart\srvc_omada" -AppPoolUserPassword "Omada12345" -CertThumbprint '629159577035C3939AE852EB29468DEB116424E8'
-    #>
-    [cmdletbinding(SupportsShouldProcess)]
-    Param(
-    [Parameter (Mandatory)]
-    [string]$IISWebSite,
-    
-    [Parameter (Mandatory)]
-    [string]$IISAppPoolName,
+[Parameter (Mandatory)]
+[string]$IISAppPoolName,
 
-    [Parameter (Mandatory)]
-    [string]$WebSitePath,
+[Parameter (Mandatory)]
+[string]$WebSitePath,
 
-    [Parameter (Mandatory)]
-    [string]$WebSiteBinding,
+[Parameter (Mandatory)]
+[string]$WebSiteBinding,
 
-    [Parameter ()]
-    [string]$AppPool = $false,
+[Parameter ()]
+[string]$AppPool = $false,
 
-    [Parameter ()]
-    [string]$Firewall = $false,
+[Parameter ()]
+[string]$Firewall = $false,
 
-    [Parameter (Mandatory)]
-    [string]$AppPoolUser,
+[Parameter (Mandatory)]
+[string]$AppPoolUser,
 
-    [Parameter (Mandatory)]
-    [string]$AppPoolUserPassword,
+[Parameter (Mandatory)]
+[string]$AppPoolUserPassword,
 
-	[string]$CertThumbprint = '',
-    [Boolean]$IsCI = $false,
-	[Parameter ()]
-    [int]$Port = 80,
-	
-	[Parameter ()]
-    [bool]$SetAuthenticationSettings = $true,
+[string]$CertThumbprint = '',
+[Boolean]$IsCI = $false,
+[Parameter ()]
+[int]$Port = 80,
 
-	[bool]$isDemo = $false,
-	[bool]$isTA = $false
-    )
+[Parameter ()]
+[bool]$SetAuthenticationSettings = $true,
 
-    if ($AppPool -eq $true){
-        if(Test-Path IIS:\AppPools\$IISAppPoolName){
-            $ES_Install_Output.text +=  ("App pool {0} exists, skipping.`r`n" -F $IISAppPoolName)#-ForegroundColor Red
-        }else{
-            $ES_Install_Output.text +=  ("Creating app pool {0}...`r`n" -F $IISAppPoolName)#-ForegroundColor Yellow
-            $t = New-WebAppPool -Name $IISAppPoolName
-            Set-ItemProperty iis:\apppools\$IISAppPoolName -name processModel -value @{userName=$AppPoolUser;password=$AppPoolUserPassword;identitytype=3}
-            Sleep -Seconds 5
-            $ES_Install_Output.text +=  "App pool created`r`n"#-ForegroundColor Green
-        }
-    }
+[bool]$isDemo = $false,
+[bool]$isTA = $false
+)
+
+		if ($AppPool -eq $true){
+			if(Test-Path IIS:\AppPools\$IISAppPoolName){
+				$ES_Install_Output.text +=  ("App pool {0} exists, skipping.`r`n" -F $IISAppPoolName)#-ForegroundColor Red
+			}else{
+				$ES_Install_Output.text +=  ("Creating app pool {0}...`r`n" -F $IISAppPoolName)#-ForegroundColor Yellow
+				$t = New-WebAppPool -Name $IISAppPoolName
+				Set-ItemProperty iis:\apppools\$IISAppPoolName -name processModel -value @{userName=$AppPoolUser;password=$AppPoolUserPassword;identitytype=3}
+				Sleep -Seconds 5
+				$ES_Install_Output.text +=  "App pool created`r`n"#-ForegroundColor Green
+			}
+		}
 
     $t = (Get-Website –Name $IISWebSite)
     if ($t -eq $null){
         $ES_Install_Output.text +=  ("Creating web site {0}...`r`n" -F $IISWebSite)#-ForegroundColor Yellow
-        if ($CertThumbprint.Length -gt 0){
+<#         if ($CertThumbprint.Length -gt 0){
             $ES_Install_Output.text +=  "Adding https binding`r`n"#-ForegroundColor Yellow 
             Get-Item IIS:\SslBindings\*!443 | Remove-Item
 			$certificate = Get-ChildItem Cert:\LocalMachine\My | Where-Object {$_.Thumbprint -eq $CertThumbprint}
@@ -380,26 +351,26 @@ Function New-OISWebSite{
 				$t = New-Item -Path ("IIS:\SslBindings\!443!{0}" -F $WebSiteBinding) -Value $certificate -SSLFlags 1
 			}
 			
-		}
-		else{
+		} 
+		else{#>
 			$ES_Install_Output.text +=  "Adding http binding`r`n"#-ForegroundColor Yellow 
 			$ES_Install_Output.text +=  ("Adding binding for {0}`r`n" -f $ip)#-ForegroundColor Yellow 
 			$t = New-Item iis:\Sites\$IISWebSite -PhysicalPath $WebSitePath -Bindings @{protocol="http";bindingInformation="*:" + [string]$Port + ":$WebSiteBinding"} -ApplicationPool $IISAppPoolName -AutoStart $true
-			if ((Get-NetIPAddress | Where-Object {$_.PrefixOrigin -eq 'Dhcp'}) -ne $null){
-				$ip = ((Get-NetIPAddress -PrefixOrigin "dhcp").IPAddress | Where-Object {$_ -ne "127.0.0.1"})
-				$ES_Install_Output.text +=  ("Adding binding for {0}`r`n" -f $ip)#-ForegroundColor Yellow 
-				if ($ip -ne $null){
-					$ES_Install_Output.text +=  ("Binding added {0}`r`n" -f $ip)#-ForegroundColor Green
-					New-WebBinding -Name $IISWebSite -IPAddress $ip -Port 80 -HostHeader '' | Out-Null
+				if ((Get-NetIPAddress | Where-Object {$_.PrefixOrigin -eq 'Dhcp'}) -ne $null){
+					$ip = ((Get-NetIPAddress -PrefixOrigin "dhcp").IPAddress | Where-Object {$_ -ne "127.0.0.1"})
+					$ES_Install_Output.text +=  ("Adding binding for {0}`r`n" -f $ip)#-ForegroundColor Yellow 
+							if ($ip -ne $null){
+								$ES_Install_Output.text +=  ("Binding added {0}`r`n" -f $ip)#-ForegroundColor Green
+								New-WebBinding -Name $IISWebSite -IPAddress $ip -Port 80 -HostHeader '' | Out-Null
+							}else{
+								$ES_Install_Output.text +=  ("Binding not added {0}`r`n" -f $ip)#-ForegroundColor Red
+								$ES_Install_Output.text +=  "Unable to add binding to ES web site`r`n"#-ForegroundColor Yellow
+							}
 				}else{
-					$ES_Install_Output.text +=  ("Binding not added {0}`r`n" -f $ip)#-ForegroundColor Red
-					$ES_Install_Output.text +=  "Unable to add binding to ES web site`r`n"#-ForegroundColor Yellow
+					$ES_Install_Output.text +=  "Unable to add binding to ES web site, dhcp address not found`r`n"#-ForegroundColor Yellow
 				}
-			}else{
-				$ES_Install_Output.text +=  "Unable to add binding to ES web site, dhcp address not found`r`n"#-ForegroundColor Yellow
-			}
 			
-		}		
+		#}		
         $ES_Install_Output.text +=  "Web site created`r`n"#-ForegroundColor Green
     
     }
@@ -407,58 +378,57 @@ Function New-OISWebSite{
         $ES_Install_Output.text +=  ("Web site {0} exists, skipping`r`n" -F $IISWebSite)#-ForegroundColor red
     }
 
-	if($isDemo){
-        #change bindings so ES portal will be the "default" page
-		try{
-			$t = Get-item 'IIS:\Sites\Default Web Site'
-		}catch{}
-		if($t -ne $null){
-			try{
-				Remove-WebBinding -Name $t.name -Protocol 'https'
-			}catch{}
-			try{
-				Remove-WebBinding -Name $t.name -Protocol 'http' -Port 80 -HostHeader '*'
-			}catch{}
-			try{
-				Remove-WebBinding -Name $t.name -Protocol 'http' -Port 80 -HostHeader '127.0.0.1'
-			}catch{}
-			$ES_Install_Output.text +=  "Removed default bindings for Default Web Page`r`n"#-ForegroundColor Green
-			#add binding for "default" address - FQDN of computer, workaround so exchange will be still working
-			$defaultBinding = (Get-WmiObject win32_computersystem).DNSHostName+"."+(Get-WmiObject win32_computersystem).Domain
-			$tt = Get-WebBinding -Name $t.name -Protocol 'http' -Port 80 -HostHeader $defaultBinding
-			if ($tt -eq $null){
-				New-WebBinding -Name $t.name -Protocol 'http' -Port 80 -HostHeader $defaultBinding
-			}
-			$tt = Get-WebBinding -Name $t.name -Protocol 'http' -Port 80 -HostHeader (Get-WmiObject win32_computersystem).DNSHostName
-			if ($tt -eq $null){
-				New-WebBinding -Name $t.name -Protocol 'http' -Port 80 -HostHeader (Get-WmiObject win32_computersystem).DNSHostName
-			}
-        
-		}
+			if($isDemo){
+				#change bindings so ES portal will be the "default" page
+				try{
+					$t = Get-item 'IIS:\Sites\Default Web Site'
+				}catch{}
+				if($t -ne $null){
+					try{
+						Remove-WebBinding -Name $t.name -Protocol 'https'
+					}catch{}
+					try{
+						Remove-WebBinding -Name $t.name -Protocol 'http' -Port 80 -HostHeader '*'
+					}catch{}
+					try{
+						Remove-WebBinding -Name $t.name -Protocol 'http' -Port 80 -HostHeader '127.0.0.1'
+					}catch{}
+					$ES_Install_Output.text +=  "Removed default bindings for Default Web Page`r`n"#-ForegroundColor Green
+					#add binding for "default" address - FQDN of computer, workaround so exchange will be still working
+					$defaultBinding = (Get-WmiObject win32_computersystem).DNSHostName+"."+(Get-WmiObject win32_computersystem).Domain
+					$tt = Get-WebBinding -Name $t.name -Protocol 'http' -Port 80 -HostHeader $defaultBinding
+					if ($tt -eq $null){
+						New-WebBinding -Name $t.name -Protocol 'http' -Port 80 -HostHeader $defaultBinding
+					}
+					$tt = Get-WebBinding -Name $t.name -Protocol 'http' -Port 80 -HostHeader (Get-WmiObject win32_computersystem).DNSHostName
+					if ($tt -eq $null){
+						New-WebBinding -Name $t.name -Protocol 'http' -Port 80 -HostHeader (Get-WmiObject win32_computersystem).DNSHostName
+					}
+				
+				}
 
-		$t = (Get-Website –Name $IISWebSite)
-		if($t -ne $null){
-			#New-WebBinding -Name $t.name -Protocol 'http' -Port 80 -HostHeader '*'
-			$ip = ((Get-NetIPAddress -PrefixOrigin "dhcp").IPAddress | Where-Object {$_ -ne "127.0.0.1"})
-			New-WebBinding -Name $t.name -Protocol 'http' -Port 80 -HostHeader $ip
-			if ($CertThumbprint.Length -gt 0){
-				$certificate = Get-ChildItem Cert:\LocalMachine\My | Where-Object {$_.Thumbprint -eq $CertThumbprint}
-				New-WebBinding -Name $t.name  -Protocol "https" -Port 443 -HostHeader '*' -SslFlags 1
-				$ES_Install_Output.text +=  ("Added '*' bindings for {0}`r`n" -f $IISWebSite)#-ForegroundColor Green
+				$t = (Get-Website –Name $IISWebSite)
+				if($t -ne $null){
+					#New-WebBinding -Name $t.name -Protocol 'http' -Port 80 -HostHeader '*'
+					$ip = ((Get-NetIPAddress -PrefixOrigin "dhcp").IPAddress | Where-Object {$_ -ne "127.0.0.1"})
+					New-WebBinding -Name $t.name -Protocol 'http' -Port 80 -HostHeader $ip
+					if ($CertThumbprint.Length -gt 0){
+						$certificate = Get-ChildItem Cert:\LocalMachine\My | Where-Object {$_.Thumbprint -eq $CertThumbprint}
+						New-WebBinding -Name $t.name  -Protocol "https" -Port 443 -HostHeader '*' -SslFlags 1
+						$ES_Install_Output.text +=  ("Added '*' bindings for {0}`r`n" -f $IISWebSite)#-ForegroundColor Green
+					}
+					
+				}
+				Remove-WebConfigurationProperty //defaultDocument ("IIS:\sites\" + $IISWebSite) -name files.collection -atIndex 0
+				Add-WebConfiguration //defaultDocument/files ("IIS:\sites\" +  $IISWebSite) -atIndex 0 -Value @{value="main.aspx"}
 			}
-			
-		}
-		Remove-WebConfigurationProperty //defaultDocument ("IIS:\sites\" + $IISWebSite) -name files.collection -atIndex 0
-		Add-WebConfiguration //defaultDocument/files ("IIS:\sites\" +  $IISWebSite) -atIndex 0 -Value @{value="main.aspx"}
-    }
-	if ($SetAuthenticationSettings)
-	{
-		if (!($isTA)){
-			$ES_Install_Output.text +=  "Disable anonymous authentication`r`n"#-ForegroundColor Yellow
-			$t = Set-WebConfigurationProperty -filter "/system.WebServer/security/authentication/AnonymousAuthentication" -name Enabled -location $IISWebSite -Value $false
-		}else{
-			$ES_Install_Output.text +=  "This is demo installation, anonymous authentication will be enabled`r`n"#-ForegroundColor Yellow
-		}
+	if ($SetAuthenticationSettings){
+				if (!($isTA)){
+					$ES_Install_Output.text +=  "Disable anonymous authentication`r`n"#-ForegroundColor Yellow
+					$t = Set-WebConfigurationProperty -filter "/system.WebServer/security/authentication/AnonymousAuthentication" -name Enabled -location $IISWebSite -Value $false
+				}else{
+					$ES_Install_Output.text +=  "This is demo installation, anonymous authentication will be enabled`r`n"#-ForegroundColor Yellow
+				}
     	
 
     	$ES_Install_Output.text +=  "Enable and configure windows authentication`r`n"#-ForegroundColor Yellow
@@ -471,33 +441,32 @@ Function New-OISWebSite{
     	$t = Set-WebConfigurationProperty -filter "/system.WebServer/security/authentication/BasicAuthentication" -name Enabled -location $IISWebSite -Value $true
 		$ES_Install_Output.text +=  "Add web site to trusted zone`r`n"#-ForegroundColor Yellow
 		$t = New-PSDrive -name HKCU -PSProvider Registry -root HKEY_CURRENT_USER -ErrorAction SilentlyContinue
-		if ((Test-Path ("HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains\{0}" -f $WebSiteBinding)) -eq $true){
-	        $ES_Install_Output.text +=  "No need to update registry, skipping`r`n"#-ForegroundColor Green
-    	}
-		else{
-			#sometimes the key "EscDomains" is missing from the registry - check, so it will not cause error
-			if (!(Test-Path ("HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains"))) {
-				$t = New-Item -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\" -Name "EscDomains"
-				$ES_Install_Output.text +=  "Added registry key: EscDomains`r`n"#-ForegroundColor Green
+			if ((Test-Path ("HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains\{0}" -f $WebSiteBinding)) -eq $true){
+				$ES_Install_Output.text +=  "No need to update registry, skipping`r`n"#-ForegroundColor Green
 			}
-			$t = New-Item -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains" -Name $WebSiteBinding
-			$t = New-ItemProperty -Path ("HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains\{0}" -f $WebSiteBinding) -PropertyType DWORD -Name "http" -Value "1"
-			$ES_Install_Output.text +=  "Value added to registry`r`n"#-ForegroundColor Green
-		}
+			else{
+				#sometimes the key "EscDomains" is missing from the registry - check, so it will not cause error
+					if (!(Test-Path ("HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains"))) {
+						$t = New-Item -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\" -Name "EscDomains"
+						$ES_Install_Output.text +=  "Added registry key: EscDomains`r`n"#-ForegroundColor Green
+					}
+				$t = New-Item -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains" -Name $WebSiteBinding
+				$t = New-ItemProperty -Path ("HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains\{0}" -f $WebSiteBinding) -PropertyType DWORD -Name "http" -Value "1"
+				$ES_Install_Output.text +=  "Value added to registry`r`n"#-ForegroundColor Green
+			}
 		$t = Remove-PSDrive -Name HKCU
 	}
 
 	if ($Firewall -eq $true){
-        if ($CertThumbprint.Length -gt 0){
-    	    $t = New-NetFirewallRule -DisplayName "Allow HTTPS In" -Direction Inbound -LocalPort 443 -Protocol TCP -Action Allow
-         	$ES_Install_Output.text +=  "Added firewall rule for incoming HTTPS traffic`r`n"#-ForegroundColor Green
-    	}
-    	else{
-        	$t = New-NetFirewallRule -DisplayName "Allow HTTP In" -Direction Inbound -LocalPort 80 -Protocol TCP -Action Allow
-        	$ES_Install_Output.text +=  "Added firewall rule for incoming HTTP traffic`r`n"#-ForegroundColor Green
-    	}
-    }
-		
+			if ($CertThumbprint.Length -gt 0){
+				$t = New-NetFirewallRule -DisplayName "Allow HTTPS In" -Direction Inbound -LocalPort 443 -Protocol TCP -Action Allow
+				$ES_Install_Output.text +=  "Added firewall rule for incoming HTTPS traffic`r`n"#-ForegroundColor Green
+			}
+			else{
+				$t = New-NetFirewallRule -DisplayName "Allow HTTP In" -Direction Inbound -LocalPort 80 -Protocol TCP -Action Allow
+				$ES_Install_Output.text +=  "Added firewall rule for incoming HTTP traffic`r`n"#-ForegroundColor Green
+			}
+	}
 }
 
 
@@ -711,9 +680,10 @@ $ES_Install_Output.text += "`r`n***2.4 Creating a web site for Enterprise Server
 			
             $esWebSitePath = (Join-Path -Path $esInstallationPath -ChildPath "website")
             $u = ("{0}\{1}" -F $serviceUserDomain, $serviceUser)
-            #$t = New-OISWebSite -IISAppPoolName $esAppPool -IISWebSite $esWebSite -AppPool $true -WebSitePath $esWebSitePath -WebSiteBinding $esBinding -Firewall $true -AppPoolUser $u -AppPoolUserPassword $serviceUserPassword -CertThumbprint "" #-IsCI $IsCI -isDemo $demoEnabled -isTA $demoTA
+            $t = New-OISWebSite -IISAppPoolName $esAppPool -IISWebSite $esWebSite -AppPool $true -WebSitePath $esWebSitePath -WebSiteBinding $esBinding -Firewall $true -AppPoolUser $u -AppPoolUserPassword $serviceUserPassword -CertThumbprint "" #-IsCI $IsCI -isDemo $demoEnabled -isTA $demoTA
 			#New-OISWebSite -IISAppPoolName "Enterprise server" -IISWebSite "Enterprise Server" -AppPool $true -WebSitePath "C:\Program Files\Omada Identity Suite\Enterprise Server 12\website" -WebSiteBinding "enterpriseserver" -Firewall $true -AppPoolUser "megamart\srvc_omada" -AppPoolUserPassword "Omada12345" -CertThumbprint '629159577035C3939AE852EB29468DEB116424E8'
             #Show-Info -IsCI $IsCI -Message "Starting a web site..." -ForegroundColor Yello
+			$ES_Install_Output.text +=  "Finished creating a web site`r`n"
 			
 
 
