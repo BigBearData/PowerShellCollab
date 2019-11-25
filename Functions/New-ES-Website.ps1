@@ -24,6 +24,7 @@ param(
  $IISWebSite=$WebSiteName
  $Port=80
 
+import-module webadministration
 #New-ES-Website -serviceUser Administrator -serviceUserPassword -IISAppPoolName -esInstallationPath -WebSiteName -WebSiteBinding
  
 <# 	#For testing only!
