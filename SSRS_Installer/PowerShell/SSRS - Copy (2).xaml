@@ -12,28 +12,21 @@
                         <ColumnDefinition/>
                     </Grid.ColumnDefinitions>
 					<Label Content="SSIS Server Name:" HorizontalAlignment="Left" Height="26" Margin="24,33,0,0" VerticalAlignment="Top" Width="131"/>
+					<Label Content="SSRS URL:" HorizontalAlignment="Left" Height="26" Margin="24,126,0,0" VerticalAlignment="Top" Width="131"/>
 					<Label Content="MSSQL Server Name:" HorizontalAlignment="Left" Height="26" Margin="24,95,0,0" VerticalAlignment="Top" Width="131"/>
 					<Label Content="SSIS Service Account:" HorizontalAlignment="Left" Height="26" Margin="24,64,0,0" VerticalAlignment="Top" Width="131"/>
-					<Label Content="License Key:" HorizontalAlignment="Left" Height="26" Margin="24,126,0,0" VerticalAlignment="Top" Width="131"/>
-					<Label Content="Install Dir:" HorizontalAlignment="Left" Height="26" Margin="24,159,0,0" VerticalAlignment="Top" Width="131"/>
-					<Label Content="ES Service Account:" HorizontalAlignment="Left" Margin="510,14,0,0" VerticalAlignment="Top" Height="25" Width="136"/>
-					<Label Content="ES User Password:" HorizontalAlignment="Left" Margin="510,41,0,0" VerticalAlignment="Top" Height="25" Width="136"/>
-					<Label Content="Product DB Name:" HorizontalAlignment="Left" Margin="470,108,0,0" VerticalAlignment="Top" Height="25" Width="136"/>
-					<Label Content="Staging DB Name:" HorizontalAlignment="Left" Margin="470,138,0,0" VerticalAlignment="Top" Height="25" Width="136"/>
-					<Label Content="Master DB Name:" HorizontalAlignment="Left" Margin="470,168,0,0" VerticalAlignment="Top" Height="25" Width="136"/>
+					<Label Content="License Key:" HorizontalAlignment="Left" Height="26" Margin="395,127,0,0" VerticalAlignment="Top" Width="131"/>
+					<Label Content="Install Dir:" HorizontalAlignment="Left" Height="26" Margin="395,159,0,0" VerticalAlignment="Top" Width="131"/>
 					<TextBox Name="SSIS_ServerName" HorizontalAlignment="Left" Height="26" Margin="173,33,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="169"/>
+					<TextBox Name="SSIS_URL" Text = "NA" HorizontalAlignment="Left" Height="26" Margin="173,126,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="169" />
 					<TextBox Name="MSSQL_ssis_ServerName" HorizontalAlignment="Left" Height="26" Margin="173,95,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="169"/>
 					<TextBox Name="SSIS_ServiceAccount" HorizontalAlignment="Left" Height="26" Margin="173,64,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="169"/>
 					<TextBox Name="Output_SSIS_PreCheck" HorizontalAlignment="Left" Height="220" Margin="24,200,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="733" />
-					<TextBox Name="SsisLicenseKey" HorizontalAlignment="Left" Height="26" Margin="173,126,0,0"  TextWrapping="NoWrap" VerticalAlignment="Top" Width="277"/>
-					<TextBox Name="ODW_SSIS_InstDir" Text = "C:\Program Files\Omada Identity Suite\Datawarehouse" HorizontalAlignment="Left" Height="25" Margin="173,159,0,0" TextWrapping="NoWrap" VerticalAlignment="Top" Width="277"/>
-					<TextBox Name="ES_ServiceAccount"  HorizontalAlignment="Left" Height="25" Margin="625,14,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" Grid.Column="1"/>
-					<TextBox Name="ES_ServicePassword"  HorizontalAlignment="Left" Height="25" Margin="625,41,0,0" TextWrapping="NoWrap" VerticalAlignment="Top" Width="120" Grid.Column="1"/>
-					<TextBox Name="ODWProductDB" Text = "Omada Data Warehouse"  HorizontalAlignment="Left" Height="25" Margin="585,108,0,0" TextWrapping="NoWrap" VerticalAlignment="Top" Width="160" Grid.Column="1"/>
-					<TextBox Name="ODWProductDBStaging" Text = "Omada Data Warehouse Staging"  HorizontalAlignment="Left" Height="25" Margin="585,138,0,0" TextWrapping="NoWrap" VerticalAlignment="Top" Width="160" Grid.Column="1"/>
-					<TextBox Name="ODWProductDBMaster" Text = "Omada Data Warehouse Master"  HorizontalAlignment="Left" Height="25" Margin="585,168,0,0" TextWrapping="NoWrap" VerticalAlignment="Top" Width="160" Grid.Column="1"/>
-					<Button Name="Button_SSIS_RunPreCheck" Content="Run Pre-Check" HorizontalAlignment="Left" Height="26" Margin="365,33,0,0" VerticalAlignment="Top" Width="125"/>
-					<Button Name="Button_SSIS_InstallODW" Content="Install ODW" HorizontalAlignment="Left" Height="26" Margin="365,64,0,0" VerticalAlignment="Top" Width="125"/>
+					<TextBox Name="SsisLicenseKey" HorizontalAlignment="Left" Height="26" Margin="480,127,0,0" TextWrapping="NoWrap" VerticalAlignment="Top" Width="277"/>
+					<TextBox Name="ODW_SSIS_InstDir" Text = "C:\Program Files\Omada Identity Suite\Datawarehouse" HorizontalAlignment="Left" Height="25" Margin="480,159,0,0" TextWrapping="NoWrap" VerticalAlignment="Top" Width="277"/>
+					<Button Name="Button_SSIS_RunPreCheck" Content="Run Pre-Check" HorizontalAlignment="Left" Height="26" Margin="395,33,0,0" VerticalAlignment="Top" Width="125"/>
+					<Button Name="Button_SSIS_InstallODW" Content="Install ODW" HorizontalAlignment="Left" Height="26" Margin="395,64,0,0" VerticalAlignment="Top" Width="125"/>
+					<Button Name="Button_ssis_UploadReports" Content="Upload Reports" HorizontalAlignment="Left" Height="26" Margin="395,95,0,0" VerticalAlignment="Top" Width="125"/>
 				</Grid>
             </TabItem>
 			<TabItem Header="SSRS">
