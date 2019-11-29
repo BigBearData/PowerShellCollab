@@ -247,6 +247,212 @@ Function Publish-SSRSReports {
     }
 }#end of function Publish-SSRSReports
 
+ Function Get-SQLName {
+    
+        <#
+        .SYNOPSIS
+            Checks the name of SQL and it's instance
+        .DESCRIPTION
+            Gets the instance name and ssrs
+        .PARAMETER SQLInstance
+            Information from the config file about SQL
+        .PARAMETER rsOnAppServer
+            if SSRS is on the App server
+        
+        .EXAMPLE
+            Get-SQLName -SQLInstance 'testdb\instancename,6666;NodeName' -rsOnAppServer $true
+        #>
+        [cmdletbinding(SupportsShouldProcess)]
+        Param(
+        [Parameter (Mandatory)]
+        [string]$SQLInstance,
+
+        [Parameter (Mandatory)]
+        [bool]$rsOnAppServer
+        )
+
+         #$SQLName = (Get-WmiObject win32_computersystem).DNSHostName+"."+(Get-WmiObject win32_computersystem).Domain
+		#$Output_SSIS_PreCheck.text += $SQLInstance
+         #strip for cluster node	DOES NOT WORK
+          if ($SQLInstance.IndexOf(";") -ge 0){
+            #$Output_SSIS_PreCheck.text += "SQL server is using cluster`r`n" 
+            $SQLInstance = $SQLInstance.Substring(0, $SQLInstance.IndexOf(";"))
+	   		$SQLNodeName = $SQLInstance.Substring($SQLInstance.IndexOf(";") + 1)
+         }
+         else{
+            $Output_SSIS_PreCheck.text += "SQL server is not using cluster`r`n" 
+         }
+         #strip from port
+         if ($SQLInstance.IndexOf(",") -ge 0){
+            $Output_SSIS_PreCheck.text += "SQL server is using nondefault port`r`n" 
+            $SQLInstance = $SQLInstance.Substring(0, $SQLInstance.IndexOf(","))
+         }
+         else{
+               $Output_SSIS_PreCheck.text += "SQL server is using default port`r`n" 
+         }
+         #strip for instace
+         if ($SQLInstance.IndexOf("\") -ge 0){
+            $Output_SSIS_PreCheck.text += "SQL server is using named instance`r`n" 
+            $SQLInstanceWithout = $SQLInstance.Substring(0, $SQLInstance.IndexOf("\"))
+	   		$SQLInstanceName = $SQLInstance.Substring($SQLInstance.IndexOf("\") + 1)
+         }
+         else{
+            $Output_SSIS_PreCheck.text += "SQL server is using default instance`r`n" 
+            $SQLInstanceWithout = $SQLInstance
+   			$SQLInstanceName = $null
+         } 
+ 
+<#          #check where rs should be. #Comment: Should be able to install SSRS on any server. 
+         if($rsOnAppServer){
+            Show-Info -IsCI $IsCI -Message "SSRS on App server will be used" -ForegroundColor Yellow
+            $rsServer = $env:COMPUTERNAME
+         }else{
+            Show-Info -IsCI $IsCI -Message "SSRS on SQL server will be used" -ForegroundColor Yellow
+            $rsServer = $SQLName
+         } #>
+         #check if remoteDB is true
+<#          if($SQLInstance.StartsWith(".")){
+            $Output_SSIS_PreCheck.text += "Local SQL will be used, name will be translated to {0}`r`n"  -f (Get-WmiObject win32_computersystem).DNSHostName
+            $remoteDB = $false
+         }elseif ($SQLInstance.StartsWith("localhost")){
+            $Output_SSIS_PreCheck.text += "Local SQL will be used, localhost will be translated to {0}`r`n" -f (Get-WmiObject win32_computersystem).DNSHostName
+            $remoteDB = $false
+         }elseif ($SQLInstance.StartsWith((Get-WmiObject win32_computersystem).DNSHostName)){
+            $Output_SSIS_PreCheck.text += "Local SQL will be used.`r`n" 
+            $remoteDB = $false
+         }elseif ($SQLInstance.StartsWith($env:COMPUTERNAME)){
+            $Output_SSIS_PreCheck.text += "Remote SQL will be used: {0}`r`n"  -f $SQLInstanceWithout
+            $remoteDB = $false
+         }else{
+            $remoteDB = $true
+         } #>
+
+          $result = @(
+            New-Object PSObject -Property @{SQLName = $SQLName; SQLInstanceWithout = $SQLInstanceWithout; rsServer = $rsServer; remoteDB = $remoteDB; SQLInstanceName = $SQLInstanceName; SQLNodeName = $SQLNodeName}
+         )
+ 
+         return $result 
+
+}
+
+function Set-DCOMSecurity{
+
+<#
+    .SYNOPSIS
+        Updates DCOM security
+    .DESCRIPTION
+        
+    .PARAMETER UserName
+        User name which is lauching DCOM
+    .PARAMETER Domain
+        Domain in which user name is coming from
+    .PARAMETER IsCI
+        If this a manual install or CI triggered
+    .EXAMPLE 
+        Set-DCOMSecurity -UserName "administrator" -Domain "megamart" -SQLVersion "11" -SQLServer "localhost" -Credential $null
+    #>
+    [cmdletbinding(SupportsShouldProcess)]
+    Param(
+    [string]$UserName,
+
+    [string]$Domain,
+
+    [string]$SQLVersion,
+
+    [string]$SQLServer = 'localhost',
+
+    $Credential,
+    [Boolean]$IsCI = $false
+    )
+
+    $ScriptBlock = {
+        $UserName = $args[0]
+        $Domain = $args[1]
+        $SQLVersion = $args[2]
+        $SQLServer = $args[3]
+      try{
+          $appdesc = ("Microsoft SQL Server Integration Services {0}.0" -F $SQLVersion)
+          $app = get-wmiobject -query ('SELECT * FROM Win32_DCOMApplicationSetting WHERE Description = "' + $appdesc + '"') -enableallprivileges
+          $sdRes = $app.GetLaunchSecurityDescriptor()
+          $sd = $sdRes.Descriptor
+          $trustee = ([wmiclass] 'Win32_Trustee').CreateInstance()
+          $trustee.Domain = $Domain
+          $trustee.Name = $UserName
+          $fullControl = 31
+          $localLaunchActivate = 11
+          $ace = ([wmiclass] 'Win32_ACE').CreateInstance()
+          $ace.AccessMask = $localLaunchActivate
+          $ace.AceFlags = 0
+          $ace.AceType = 0
+          $ace.Trustee = $trustee
+          [System.Management.ManagementBaseObject[]] $newDACL = $sd.DACL + @($ace)
+          $sd.DACL = $newDACL
+          $t = $app.SetLaunchSecurityDescriptor($sd)
+          if ($SQLServer -eq "localhost"){
+              $Output_SSIS_PreCheck.text += "Setting DCOM Access Security for $UserName on local machine`r`n"
+          }
+          else{
+              $Output_SSIS_PreCheck.text += "($SQLServer) Setting DCOM Access Security for $UserName`r`n"
+          }
+          $appdesc = ("Microsoft SQL Server Integration Services {0}.0" -F $SQLVersion)
+          $app = get-wmiobject -query ('SELECT * FROM Win32_DCOMApplicationSetting WHERE Description = "' + $appdesc + '"') -enableallprivileges
+          $sdRes = $app.GetAccessSecurityDescriptor()
+          $sd = $sdRes.Descriptor
+          $trustee = ([wmiclass] 'Win32_Trustee').CreateInstance()
+          $trustee.Domain = $domain
+          $trustee.Name = $UserName
+          $fullControl = 31
+          $localLaunchActivate = 11
+          $ace = ([wmiclass] 'Win32_ACE').CreateInstance()
+          $ace.AccessMask = $localLaunchActivate
+          $ace.AceFlags = 0
+          $ace.AceType = 0
+          $ace.Trustee = $trustee
+          [System.Management.ManagementBaseObject[]] $newDACL = $sd.DACL + @($ace)
+          $sd.DACL = $newDACL
+          $t = $app.SetAccessSecurityDescriptor($sd)
+      }
+      catch{}
+      $t = Set-DtcNetworkSetting -DtcName Local -AuthenticationLevel Incoming -InboundTransactionsEnabled $True -LUTransactionsEnabled $True -OutboundTransactionsEnabled $True -RemoteAdministrationAccessEnabled $True -RemoteClientAccessEnabled $True -XATransactionsEnabled $True -Confirm:$false
+  
+  }
+
+    if ($SQLServer -eq 'localhost' -or $SQLServer -eq $env:ComputerName){
+        $Output_SSIS_PreCheck.text += "Setting DCOM Launch Security for $UserName`r`n"
+        $t = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $UserName, $Domain, $SQLVersion, $SQLServer
+    }
+    else{
+        $Output_SSIS_PreCheck.text += "($SQLServer) Setting DCOM Launch Security for $UserName`r`n"
+        $t = Invoke-Command -ComputerName $SQLServer -Credential $Credential -ScriptBlock $ScriptBlock -ArgumentList $UserName, $Domain, $SQLVersion, $SQLServer
+    }
+
+}
+ #Set-DCOMSecurity -UserName "administrator" -Domain "megamart" -SQLVersion "11" -SQLServer "localhost" -Credential $null
+ 
+Function Show-Info {
+    [cmdletbinding(SupportsShouldProcess)]
+    Param(
+    [string]$Message,
+    [string]$ForegroundColor,
+    $IsCI = $false,
+	$Service
+    )
+
+	switch ($IsCI) {
+	
+		SSIS {
+		$Output_SSIS_PreCheck.text += $Message
+		$Output_SSIS_PreCheck.text += "`r`n"
+		}
+		SSRS {
+		$Output_SSRS_PreCheck.text += $Message
+		$Output_SSRS_PreCheck.text += "`r`n"
+		}
+	
+	}
+
+}
+
 #READ THE XAML FILE
 [xml]$Form = Get-Content ".\SSRS.xaml"
 $NR = (New-Object System.Xml.XmlNodeReader $Form)
@@ -310,10 +516,11 @@ $ODWW_IIS_ProductDBStaging=$Win.FindName("ODWProductDBStaging")
 $ODWW_IIS_ProductDBMaster=$Win.FindName("ODWProductDBMaster")
 $ES_ServiceAccount=$Win.FindName("ES_ServiceAccount")
 $ES_ServicePassword=$Win.FindName("ES_ServicePassword")
+$SQLVersion=$Win.FindName("SQLVersion")
 
 $SSIS_ServerName.text = $Env:Computername
-$MSSQL_ssis_ServerName.text = $Env:Computername
-[string]$SSISSpnUser = OIS_GetServiceUser -ServiceName SSRS ServerName $SSRS_ServerName -Verbose $False -CheckRemote $False
+#$MSSQL_ssis_ServerName.text = $Env:Computername
+[string]$SSISSpnUser = OIS_GetServiceUser -ServiceName SSIS ServerName $SSRS_ServerName -Verbose $False -CheckRemote $False
 $SSIS_ServiceAccount.text = $SSISSpnUser
 
 #$Output_SSIS_PreCheck.text += ""
@@ -326,16 +533,36 @@ $Button_SSIS_InstallODW.Add_Click({
 	$ODWProductDB=$ODW_IIS_ProductDB.text
 	$ODWProductDBStaging=$ODWW_IIS_ProductDBStaging.text
 	$ODWProductDBMaster=$ODWW_IIS_ProductDBMaster.text
+	$MSSQLVersion=$SQLVersion.text
 	
 	#Constants
 	$serviceUser=$ES_ServiceAccount.text
+	#$logPath = Join-Path -Path $RootInstallerFolder -ChildPath "\Logs"
+	$SQLInstance=$MSSQLssisServerName
+	$SSISInstance=$SSISServerName
+	$PSScriptRoot=""
+	$odwInstallationPath=$ODW_SSIS_InstDir
+	$IsCI ="SSIS"
+	
+	#GET SQL INFORMATION
+	$t=(Get-SQLName -SQLInstance $MSSQLssisServerName -rsOnAppServer $false)
+	$SQLName = $t.SQLName
+	$SQLInstanceWithout = $t.SQLInstanceWithout
+	#$rsServer = $t.rsServer
+	$sqlInstanceName = $t.SQLInstanceName
 
-	#$Output_SSIS_PreCheck.text += $SSISSpnUser
 	#Pre-install tasks: 
 	#copy installation files, add registry (Set-ItemProperty -Path "HKCR:\Software\Omada\Omada Enterprise\$MajorVersion") line 661.
 	#Check the MsDtsSrvr.ini.xml file
+	[System.Windows.MessageBox]::Show("Please select the relevant intallation file for Omada Data Warehouse `r`nExample: C:\Omada\Install\Omada Data Warehouse.x64 SQL $MSSQLVersion.exe ", "Select ODW Install File")
+	$SSISInstallPath=Get-FileName -initialDirectory "C:\Omada\Install\"
+	$InstallerFolder = Split-Path -Path $SSISInstallPath
+	$RootInstallerFolder = Split-Path -Path $InstallerFolder
+	$logPath = Join-Path -Path $RootInstallerFolder -ChildPath "\Logs"
+	$PSCommandPath = Join-Path -Path $RootInstallerFolder -ChildPath "\DO-UpgradeTools"
+	$PSScriptRoot=$PSCommandPath
 	
-	$Output_SSIS_PreCheck.text += "***3.1 DCOM configuration***"
+	$Output_SSIS_PreCheck.text += "***3.1 DCOM configuration***`r`n" 
 	#Show-Info -IsCI $IsCI -Message "3.1 DCOM configuration" -ForegroundColor DarkGreen
 		#Set-DCOMSecurity
 		#Set-KerberosSecurity
@@ -343,9 +570,39 @@ $Button_SSIS_InstallODW.Add_Click({
 	 #Set-DCOMSecurity -UserName $serviceUser -Domain $serviceUserDomain -SQLVersion $SQLVersionNo -SQLServer $SQLInstanceWithout -Credential $credDB -IsCI $IsCI
 	 
 	
-	#Show-Info -IsCI $IsCI -Message "3.2 Omada Data Warehouse installation" -ForegroundColor DarkGreen
+	$Output_SSIS_PreCheck.text += "***3.2 Omada Data Warehouse installation`r`n"
 	
-	
+            $a = ("/qn /l*v \""{0}\installlog_odw.log\""" -F $logPath)
+            $a +=  " IS_SQLSERVER_SERVER=\""$SQLInstance\"""
+            $a +=  " IS_SQLSERVER_AUTHENTICATION=\""0\"""
+            $a +=  " IS_SQLSERVER_USERNAME=\""$SQLAdmUser\"""
+            $a +=  " IS_SQLSERVER_PASSWORD=\""$SQLAdmPass\"""
+            $a +=  (" SSISSERVER=\""{0}\""" -F $SQLInstance) #$SSISInstance
+            #installation on SSIS and the SSRS is not on that server - force installer to install reports
+            if ($remoteDB -and ($SSISInstance -ne $SQLInstance)){
+                $a += (" SSRSPath=\""{0}\""" -F (Join-Path -Path $PSScriptRoot -ChildPath 'Private\ODW\Omada.exe'))
+            }
+            $a += (" IS_SQLSERVER_DATABASE=\""{0}\""" -F $ODWProductDB)
+            $a += (" ODWSTAGINGDB=\""{0}\""" -F $ODWProductDBStaging)
+            $a += (" ODWMASTER=\""{0}\""" -F $ODWProductDBMaster)
+            $a +=  " INSTALLDIR=\""$odwInstallationPath\"""
+            #$a += " OISXCONN=\""$ConnectionString\"""#removed from installer from version rel 12.0.4
+	        #$a += (" LICENSEKEY=\""{0}\""" -F $cfgVersion.OIS.LicenseKey) bug 46176,  workaround due to command line parameter length limitations - license is added after the installation
+			
+            Show-Info -IsCI $IsCI -Message "Omada Data Warehouse installation starting..." -ForegroundColor Yellow
+            $ScriptBlock = {
+
+                $f = $SSISInstallPath # Join-Path -Path $args[0] -ChildPath $args[1] #CHANGED!!!
+                #(" /V""{0} /qn"" " -F $args[2])
+                Start-Process -Wait -FilePath $f -ArgumentList (" /V""{0} /qn"" " -F $args[2]) -PassThru  | Out-Null #-WorkingDirectory $args[0]
+				if ($null -eq (Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*  | Where-Object { $_.DisplayName -contains $args[3]} ) -or !(Test-Path -Path $args[5])){
+					Write-Host -Message ("{0} was not installed. Please check installation on {2} log for details - {1}\installlog_odw.log" -f $args[3], $logPath, $args[4]) -ForegroundColor Red
+					break
+				}
+            }
+				Show-Info -IsCI $IsCI -Message ("Installation on {0}" -F $SSISInstance) -ForegroundColor Yellow
+				#$Output_SSIS_PreCheck.text += $SSISInstallPath
+                $t = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $odwInstallerPath, $ODWexe, $a, $odwName, "local machine", $odwInstallationPath
 
 })
 

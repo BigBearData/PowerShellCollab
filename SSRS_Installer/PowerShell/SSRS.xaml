@@ -22,7 +22,7 @@
 					<Label Content="Staging DB Name:" HorizontalAlignment="Left" Margin="470,138,0,0" VerticalAlignment="Top" Height="25" Width="136"/>
 					<Label Content="Master DB Name:" HorizontalAlignment="Left" Margin="470,168,0,0" VerticalAlignment="Top" Height="25" Width="136"/>
 					<TextBox Name="SSIS_ServerName" HorizontalAlignment="Left" Height="26" Margin="173,33,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="169"/>
-					<TextBox Name="MSSQL_ssis_ServerName" HorizontalAlignment="Left" Height="26" Margin="173,95,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="169"/>
+					<TextBox Name="MSSQL_ssis_ServerName" Text = "SQLServer\InstanceName,444" HorizontalAlignment="Left" Height="26" Margin="173,95,0,0" TextWrapping="NoWrap" VerticalAlignment="Top" Width="169"/>
 					<TextBox Name="SSIS_ServiceAccount" HorizontalAlignment="Left" Height="26" Margin="173,64,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="169"/>
 					<TextBox Name="Output_SSIS_PreCheck" HorizontalAlignment="Left" Height="220" Margin="24,200,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="733" />
 					<TextBox Name="SsisLicenseKey" HorizontalAlignment="Left" Height="26" Margin="173,126,0,0"  TextWrapping="NoWrap" VerticalAlignment="Top" Width="277"/>
@@ -32,6 +32,7 @@
 					<TextBox Name="ODWProductDB" Text = "Omada Data Warehouse"  HorizontalAlignment="Left" Height="25" Margin="585,108,0,0" TextWrapping="NoWrap" VerticalAlignment="Top" Width="160" Grid.Column="1"/>
 					<TextBox Name="ODWProductDBStaging" Text = "Omada Data Warehouse Staging"  HorizontalAlignment="Left" Height="25" Margin="585,138,0,0" TextWrapping="NoWrap" VerticalAlignment="Top" Width="160" Grid.Column="1"/>
 					<TextBox Name="ODWProductDBMaster" Text = "Omada Data Warehouse Master"  HorizontalAlignment="Left" Height="25" Margin="585,168,0,0" TextWrapping="NoWrap" VerticalAlignment="Top" Width="160" Grid.Column="1"/>
+					<TextBox Name="SQLVersion" Text = "2016"  HorizontalAlignment="Left" Height="25" Margin="365,95,0,0" TextWrapping="NoWrap" VerticalAlignment="Top" Width="86" Grid.Column="1"/>
 					<Button Name="Button_SSIS_RunPreCheck" Content="Run Pre-Check" HorizontalAlignment="Left" Height="26" Margin="365,33,0,0" VerticalAlignment="Top" Width="125"/>
 					<Button Name="Button_SSIS_InstallODW" Content="Install ODW" HorizontalAlignment="Left" Height="26" Margin="365,64,0,0" VerticalAlignment="Top" Width="125"/>
 				</Grid>

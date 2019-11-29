@@ -640,6 +640,16 @@ $ES_Install_Output.text += "`r`n***2.4 Creating a web site for Enterprise Server
 
             $ES_Install_Output.text +=  "Proxy account created`r`n" 
             $ES_Install_Output.text +=  "***************************`r`n" 
+			
+<# 					if ($InputFile -eq "K"){
+						$n = "core packages"
+					}else{
+						$n = "suggested packages"
+					}
+					Show-Info -IsCI $IsCI -Message ("Importing {0}, it might take couple of minutes..." -F $n) -ForegroundColor Yellow
+					#$args = @("-C", "$Customer", "-f", "$inputFile", "-L", "$logFile")#
+					$t = ('"{3}ChangeSetImportUtil.exe" -C {0} -{1} -L "{2}" -S' -F $Customer, $InputFile, $LogFile, ($ESProductInstallPath + "\website\bin\")) #>
+
 
 $ES_Install_Output.text += "`r`n***Installation of Enterprise Server finished.***`r`n"
 $ES_Install_Output.text += "*************************************************`r`n"
