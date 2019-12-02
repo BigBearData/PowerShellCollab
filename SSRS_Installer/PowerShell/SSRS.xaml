@@ -25,7 +25,7 @@
 					<TextBox Name="MSSQL_ssis_ServerName" Text = "SQLServer\InstanceName,444" HorizontalAlignment="Left" Height="26" Margin="173,95,0,0" TextWrapping="NoWrap" VerticalAlignment="Top" Width="169"/>
 					<TextBox Name="SSIS_ServiceAccount" HorizontalAlignment="Left" Height="26" Margin="173,64,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="169"/>
 					<TextBox Name="Output_SSIS_PreCheck" HorizontalAlignment="Left" Height="220" Margin="24,200,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="733" />
-					<TextBox Name="SsisLicenseKey" HorizontalAlignment="Left" Height="26" Margin="173,126,0,0"  TextWrapping="NoWrap" VerticalAlignment="Top" Width="277"/>
+					<TextBox Name="SsisLicenseKey" Text = "company=OISDEMO;address1=DK;address2=;address3=;contact=;exp_date=31122019;issue_date=26102018;lictype=1;usr_limit=0;id_limit=0;proctmpl_limit=0;modules=OMADADATAWAREHOUSE,ODWGENERIC,ODWSAP,SURVEY_MODULE,SOD_MODULE,AO_MODULE,SAP_MA,OIS,PASSWORDRESET,OPS,EXCHANGE,ODWFIM,CIAM_MODULE;signature=HRyf/D7fa4RlFaNQdEuYRHvnHHNLsYs7Fz8GtBnokCaTVJzwX5VOMw==" HorizontalAlignment="Left" Height="26" Margin="173,126,0,0"  TextWrapping="NoWrap" VerticalAlignment="Top" Width="277"/>
 					<TextBox Name="ODW_SSIS_InstDir" Text = "C:\Program Files\Omada Identity Suite\Datawarehouse" HorizontalAlignment="Left" Height="25" Margin="173,159,0,0" TextWrapping="NoWrap" VerticalAlignment="Top" Width="277"/>
 					<TextBox Name="ES_ServiceAccount"  HorizontalAlignment="Left" Height="25" Margin="625,14,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" Grid.Column="1"/>
 					<TextBox Name="ES_ServicePassword"  HorizontalAlignment="Left" Height="25" Margin="625,41,0,0" TextWrapping="NoWrap" VerticalAlignment="Top" Width="120" Grid.Column="1"/>

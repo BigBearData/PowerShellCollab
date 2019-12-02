@@ -433,10 +433,12 @@ Function Show-Info {
     [cmdletbinding(SupportsShouldProcess)]
     Param(
     [string]$Message,
-    [string]$ForegroundColor,
+    [string]$ForegroundColor = "White",
     $IsCI = $false,
 	$Service
     )
+	
+	Write-Host $Message -ForegroundColor $ForegroundColor
 
 	switch ($IsCI) {
 	
@@ -450,6 +452,24 @@ Function Show-Info {
 		}
 	
 	}
+
+}
+
+Function get-sqlversion {
+param(
+$Sqlversion
+)
+
+    switch ( $Sqlversion )
+    {
+        2012 { $result = '11'    }
+        2014 { $result = '12'    }
+        2016 { $result = '13'   }
+        2017 { $result = '14' }
+        2019 { $result = '15'  }
+    }
+
+    $result
 
 }
 
@@ -534,6 +554,8 @@ $Button_SSIS_InstallODW.Add_Click({
 	$ODWProductDBStaging=$ODWW_IIS_ProductDBStaging.text
 	$ODWProductDBMaster=$ODWW_IIS_ProductDBMaster.text
 	$MSSQLVersion=$SQLVersion.text
+	$SQLVersionNo= get-sqlversion -Sqlversion $MSSQLVersion
+	#$Output_SSIS_PreCheck.text += $SQLVersionNo
 	
 	#Constants
 	$serviceUser=$ES_ServiceAccount.text
@@ -543,6 +565,9 @@ $Button_SSIS_InstallODW.Add_Click({
 	$PSScriptRoot=""
 	$odwInstallationPath=$ODW_SSIS_InstDir
 	$IsCI ="SSIS"
+	$SSISServiceInfo = Get-Service | where {$_.Name -like "MsDtsServer*"}
+	$SQLVersionNo=$SSISServiceInfo.DisplayName.Split()[-1].Split('.')[0]
+	#$Output_SSIS_PreCheck.text += "SQL Verion Number: {0}`r`n" -F $SQLVersionNo
 	
 	#GET SQL INFORMATION
 	$t=(Get-SQLName -SQLInstance $MSSQLssisServerName -rsOnAppServer $false)
@@ -551,6 +576,21 @@ $Button_SSIS_InstallODW.Add_Click({
 	#$rsServer = $t.rsServer
 	$sqlInstanceName = $t.SQLInstanceName
 
+
+	
+	$Output_SSIS_PreCheck.text += "***3.1 DCOM configuration***`r`n" 
+	#Show-Info -IsCI $IsCI -Message "3.1 DCOM configuration" -ForegroundColor DarkGreen
+		#Set-DCOMSecurity
+		#Set-KerberosSecurity
+		#"Restart Distributed Transaction Coordinator (MSDTC) service"
+	 #Set-DCOMSecurity -UserName $serviceUser -Domain $serviceUserDomain -SQLVersion $SQLVersionNo -SQLServer $SQLInstanceWithout -Credential $credDB -IsCI $IsCI
+<#             Set-DCOMSecurity -UserName $serviceUser -Domain $serviceUserDomain -SQLVersion $SQLVersionNo -SQLServer $SQLInstanceWithout -Credential $credDB -IsCI $IsCI
+            Set-DCOMSecurity -UserName $serviceUser -Domain $serviceUserDomain -SQLVersion $SQLVersionNo -SQLServer $SSISInstance -Credential $credDB -IsCI $IsCI
+            Set-DCOMSecurity -UserName $serviceUser -Domain $serviceUserDomain -SQLVersion $SQLVersionNo -IsCI $IsCI #>
+	
+	#$Output_SSIS_PreCheck.text += "***3.2 Omada Data Warehouse installation`r`n"
+	Show-Info -IsCI $IsCI -Message "3.2 Omada Data Warehouse installation" -ForegroundColor DarkGreen
+	
 	#Pre-install tasks: 
 	#copy installation files, add registry (Set-ItemProperty -Path "HKCR:\Software\Omada\Omada Enterprise\$MajorVersion") line 661.
 	#Check the MsDtsSrvr.ini.xml file
@@ -561,25 +601,21 @@ $Button_SSIS_InstallODW.Add_Click({
 	$logPath = Join-Path -Path $RootInstallerFolder -ChildPath "\Logs"
 	$PSCommandPath = Join-Path -Path $RootInstallerFolder -ChildPath "\DO-UpgradeTools"
 	$PSScriptRoot=$PSCommandPath
+	$odwInstallerPath=$InstallerFolder
+	$ODWexe=""
+	$odwName="Omada Identity Suite Data Warehouse"
 	
-	$Output_SSIS_PreCheck.text += "***3.1 DCOM configuration***`r`n" 
-	#Show-Info -IsCI $IsCI -Message "3.1 DCOM configuration" -ForegroundColor DarkGreen
-		#Set-DCOMSecurity
-		#Set-KerberosSecurity
-		#"Restart Distributed Transaction Coordinator (MSDTC) service"
-	 #Set-DCOMSecurity -UserName $serviceUser -Domain $serviceUserDomain -SQLVersion $SQLVersionNo -SQLServer $SQLInstanceWithout -Credential $credDB -IsCI $IsCI
-	 
+
 	
-	$Output_SSIS_PreCheck.text += "***3.2 Omada Data Warehouse installation`r`n"
-	
-            $a = ("/qn /l*v \""{0}\installlog_odw.log\""" -F $logPath)
+<#             $a = ("/qn /l*v \""{0}\installlog_odw.log\""" -F $logPath)
             $a +=  " IS_SQLSERVER_SERVER=\""$SQLInstance\"""
             $a +=  " IS_SQLSERVER_AUTHENTICATION=\""0\"""
             $a +=  " IS_SQLSERVER_USERNAME=\""$SQLAdmUser\"""
             $a +=  " IS_SQLSERVER_PASSWORD=\""$SQLAdmPass\"""
             $a +=  (" SSISSERVER=\""{0}\""" -F $SQLInstance) #$SSISInstance
             #installation on SSIS and the SSRS is not on that server - force installer to install reports
-            if ($remoteDB -and ($SSISInstance -ne $SQLInstance)){
+            #if ($remoteDB -and ($SSISInstance -ne $SQLInstance)){
+			if ($SSISInstance -ne $SQLInstance){
                 $a += (" SSRSPath=\""{0}\""" -F (Join-Path -Path $PSScriptRoot -ChildPath 'Private\ODW\Omada.exe'))
             }
             $a += (" IS_SQLSERVER_DATABASE=\""{0}\""" -F $ODWProductDB)
@@ -587,20 +623,32 @@ $Button_SSIS_InstallODW.Add_Click({
             $a += (" ODWMASTER=\""{0}\""" -F $ODWProductDBMaster)
             $a +=  " INSTALLDIR=\""$odwInstallationPath\"""
             #$a += " OISXCONN=\""$ConnectionString\"""#removed from installer from version rel 12.0.4
-	        #$a += (" LICENSEKEY=\""{0}\""" -F $cfgVersion.OIS.LicenseKey) bug 46176,  workaround due to command line parameter length limitations - license is added after the installation
+	        #$a += (" LICENSEKEY=\""{0}\""" -F $cfgVersion.OIS.LicenseKey) bug 46176,  workaround due to command line parameter length limitations - license is added after the installation #>
 			
-            Show-Info -IsCI $IsCI -Message "Omada Data Warehouse installation starting..." -ForegroundColor Yellow
+			$a = ("/qn /l*v \""{0}\installlog_odw.log\""" -F $logPath)   #D:\Omada_Install\BG(bankgirot)\Omada Identity Suite v14.0.3.20\Logs
+            $a +=  " IS_SQLSERVER_SERVER=\""$SQLInstance\"""
+            $a +=  " IS_SQLSERVER_AUTHENTICATION=\""0\"""
+            $a +=  " IS_SQLSERVER_USERNAME=\""$SQLAdmUser\"""	#'unknown'
+            $a +=  " IS_SQLSERVER_PASSWORD=\""$SQLAdmPass\"""	#'404'
+            $a +=  (" SSISSERVER=\""{0}\""" -F $SQLInstance) #$MSSQLServer
+            $a += (" IS_SQLSERVER_DATABASE=\""{0}\""" -F $ODWProductDB)  	#'Omada Data Warehouse'
+            $a += (" ODWSTAGINGDB=\""{0}\""" -F $ODWProductDBStaging)		#'Omada Data Warehouse Staging'
+            $a += (" ODWMASTER=\""{0}\""" -F $ODWProductDBMaster)			#'Omada Data Warehouse Master'
+	        $a += (" LICENSEKEY=\""{0}\""" -F $LicenseKey) #ask for this info
+			
+            Write-Host "Omada Data Warehouse installation starting..."
             $ScriptBlock = {
 
                 $f = $SSISInstallPath # Join-Path -Path $args[0] -ChildPath $args[1] #CHANGED!!!
                 #(" /V""{0} /qn"" " -F $args[2])
                 Start-Process -Wait -FilePath $f -ArgumentList (" /V""{0} /qn"" " -F $args[2]) -PassThru  | Out-Null #-WorkingDirectory $args[0]
-				if ($null -eq (Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*  | Where-Object { $_.DisplayName -contains $args[3]} ) -or !(Test-Path -Path $args[5])){
-					Write-Host -Message ("{0} was not installed. Please check installation on {2} log for details - {1}\installlog_odw.log" -f $args[3], $logPath, $args[4]) -ForegroundColor Red
-					break
-				}
+				#Start-Process -Wait -NoNewWindow -FilePath $f -ArgumentList (" /V""{0} /qn"" " -F $args[2]) -PassThru  | Out-Null #-WorkingDirectory $args[0]
+<# 				if ($null -eq (Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*  | Where-Object { $_.DisplayName -contains $args[3]} ) -or !(Test-Path -Path $args[5])){
+					Show-Info -IsCI $IsCI -Message ("{0} was not installed. Please check installation on {2} log for details - {1}\installlog_odw.log`r`n" -f $args[3], $logPath, $args[4]) -ForegroundColor Red
+					#break
+				} #>
             }
-				Show-Info -IsCI $IsCI -Message ("Installation on {0}" -F $SSISInstance) -ForegroundColor Yellow
+				Show-Info -IsCI $IsCI -Message ("Installation on {0}`r`n" -F $SSISInstance)
 				#$Output_SSIS_PreCheck.text += $SSISInstallPath
                 $t = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $odwInstallerPath, $ODWexe, $a, $odwName, "local machine", $odwInstallationPath
 
