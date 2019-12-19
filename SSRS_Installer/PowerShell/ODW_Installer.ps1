@@ -438,7 +438,7 @@ Function Show-Info {
 	$Service
     )
 	
-	Write-Host $Message -ForegroundColor $ForegroundColor
+	#Write-Host $Message -ForegroundColor $ForegroundColor
 
 	switch ($IsCI) {
 	
@@ -594,8 +594,10 @@ $Button_SSIS_InstallODW.Add_Click({
 	#Pre-install tasks: 
 	#copy installation files, add registry (Set-ItemProperty -Path "HKCR:\Software\Omada\Omada Enterprise\$MajorVersion") line 661.
 	#Check the MsDtsSrvr.ini.xml file
+	$SSISInstallPath=""
 	[System.Windows.MessageBox]::Show("Please select the relevant intallation file for Omada Data Warehouse `r`nExample: C:\Omada\Install\Omada Data Warehouse.x64 SQL $MSSQLVersion.exe ", "Select ODW Install File")
 	$SSISInstallPath=Get-FileName -initialDirectory "C:\Omada\Install\"
+	#$Output_SSIS_PreCheck.text += $SSISInstallPath
 	$InstallerFolder = Split-Path -Path $SSISInstallPath
 	$RootInstallerFolder = Split-Path -Path $InstallerFolder
 	$logPath = Join-Path -Path $RootInstallerFolder -ChildPath "\Logs"
@@ -604,6 +606,10 @@ $Button_SSIS_InstallODW.Add_Click({
 	$odwInstallerPath=$InstallerFolder
 	$ODWexe=""
 	$odwName="Omada Identity Suite Data Warehouse"
+	
+	IF ($SSISInstallPath.length -lt 1){
+		$Output_SSIS_PreCheck.text += "No installtion file provided. Installation aborted.`r`n"
+	}
 	
 
 	
@@ -651,6 +657,10 @@ $Button_SSIS_InstallODW.Add_Click({
 				Show-Info -IsCI $IsCI -Message ("Installation on {0}`r`n" -F $SSISInstance)
 				#$Output_SSIS_PreCheck.text += $SSISInstallPath
                 $t = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $odwInstallerPath, $ODWexe, $a, $odwName, "local machine", $odwInstallationPath
+				
+			Show-Info -IsCI $IsCI -Message "3.3 Adding Omada Data Warehouse users" -ForegroundColor DarkGreen
+			Show-Info -IsCI $IsCI -Message "3.4 Changing dtsConfig configuration files" -ForegroundColor DarkGreen
+			Show-Info -IsCI $IsCI -Message "3.5 Omada Data Warehouse configuration" -ForegroundColor DarkGreen
 
 })
 

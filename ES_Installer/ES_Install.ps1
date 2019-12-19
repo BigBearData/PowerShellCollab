@@ -415,9 +415,38 @@ $ES_InstDir = $Win.FindName("ES_InstDir")
 $ES_ServerName.text = $Env:Computername
 $esTimerService="OETSVC"#"ROPE_0"
 
+#OPS Variables###################################################
+$OPS_ServerName = $Win.FindName("OPS_ServerName")
+$OPS_ServiceAccount = $Win.FindName("OPS_ServiceAccount")
+$MSSQL_OPS_ServerName = $Win.FindName("MSSQL_OPS_ServerName")
+$But_OPS_Install = $Win.FindName("But_OPS_Install")
+$OPS_DBName = $Win.FindName("OPS_DBName")
+$OPS_ServicePassword = $Win.FindName("OPS_ServicePassword")
+$OPS_Install_Output = $Win.FindName("OPS_Install_Output")
+$OPS_InstDir = $Win.FindName("OPS_InstDir")
+
+$OPS_ServerName.text = $Env:Computername
+
 ################################################
 $But_Clear.Add_Click({
 $ES_Install_Output.text =""
+})
+
+##INSTALL OPS###############################################
+$But_OPS_Install.Add_Click({
+
+	#From Form
+	$OPSServer = $OPS_ServerName.Text
+	$OPSUser = $OPS_ServiceAccount.Text
+	$MSSQLServerName = $MSSQL_OPS_ServerName.Text
+	$OPSDB = $OPS_DBName.Text
+	$OPSPassword = $OPS_ServicePassword.Text
+	$OPS_ServicePassword.Text = " "
+	$OPSInstallationPath = $OPS_InstDir.Text
+	
+	#Constants
+
+
 })
 
 ##INSTALL Enterprise Server#################################

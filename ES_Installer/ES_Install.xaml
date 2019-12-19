@@ -58,7 +58,7 @@
                     <TextBox Name="RoPE_ServerName" HorizontalAlignment="Left" Height="25" Margin="151,14,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="159"/>
                     <TextBox Name="RoPE_DBName" Text="RoPE" HorizontalAlignment="Left" Height="25" Margin="151,41,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="159"/>
 					<TextBox Name="MSSQL_ServerName" Text = "servername\instance" HorizontalAlignment="Left" Height="25" Margin="151,67,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="159"/>
-					<TextBox Name="RoPE_InstDir" Text = "C:\Program Files\Omada Identity Suite\Role and Policy Engine" HorizontalAlignment="Left" Height="25" Margin="490,67,0,0" TextWrapping="NoWrap" VerticalAlignment="Top" Width="248"/>
+					<TextBox Name="RoPE_InstDir" Text = "C:\Program Files\Omada Identity Suite\Role and Policy Engine" HorizontalAlignment="Left" Height="25" Margin="460,67,0,0" TextWrapping="NoWrap" VerticalAlignment="Top" Width="278"/>
 					<TextBox Name="RoPE_ServiceAccount"  HorizontalAlignment="Left" Height="25" Margin="618,14,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120"/>
 					<TextBox Name="RoPE_ServicePassword"  HorizontalAlignment="Left" Height="25" Margin="618,41,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120"/>
                     <TextBox Name="RoPE_Install_Output" HorizontalAlignment="Left" Height="229" Margin="10,119,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="746" />
@@ -69,9 +69,17 @@
             <TabItem Header="OPS">
                 <Grid Background="#FFE5E5E5">
                     <Label Content="OPS Server Name:" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Height="25" Width="136"/>
-                    <Label Content="OPS Service Account:" HorizontalAlignment="Left" Margin="10,40,0,0" VerticalAlignment="Top" Height="25" Width="136"/>
+                    <Label Content="OPS DB Name:" HorizontalAlignment="Left" Margin="10,40,0,0" VerticalAlignment="Top" Height="25" Width="136"/>
+					<Label Content="SQL Server:" HorizontalAlignment="Left" Margin="10,66,0,0" VerticalAlignment="Top" Height="25" Width="136"/>
+					<Label Content="Install Dir:" HorizontalAlignment="Left" Margin="350,67,0,0" VerticalAlignment="Top" Height="25" Width="136"/>
+					<Label Content="OPS Service Account:" HorizontalAlignment="Left" Margin="490,14,0,0" VerticalAlignment="Top" Height="25" Width="136"/>
+					<Label Content="OPS User Password:" HorizontalAlignment="Left" Margin="490,41,0,0" VerticalAlignment="Top" Height="25" Width="136"/>
                     <TextBox Name="OPS_ServerName" HorizontalAlignment="Left" Height="25" Margin="151,14,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="159"/>
-                    <TextBox Name="OPS_ServiceAccount" HorizontalAlignment="Left" Height="25" Margin="151,39,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="159"/>
+                    <TextBox Name="OPS_DBName" Text="ProvisioningService" HorizontalAlignment="Left" Height="25" Margin="151,41,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="159"/>
+					<TextBox Name="MSSQL_OPS_ServerName" Text = "servername\instance" HorizontalAlignment="Left" Height="25" Margin="151,67,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="159"/>
+					<TextBox Name="OPS_InstDir" Text = "C:\Program Files\Omada Identity Suite\Provisioning Service" HorizontalAlignment="Left" Height="25" Margin="460,67,0,0" TextWrapping="NoWrap" VerticalAlignment="Top" Width="278"/>
+					<TextBox Name="OPS_ServiceAccount"  HorizontalAlignment="Left" Height="25" Margin="618,14,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120"/>
+					<TextBox Name="OPS_ServicePassword"  HorizontalAlignment="Left" Height="25" Margin="618,41,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120"/>
                     <Button Name="But_OPS_Install" Content="Install OPS" HorizontalAlignment="Left" Height="21" Margin="350,14,0,0" VerticalAlignment="Top" Width="99"/>
                     <Button Name="But_OPS_Clear" Content="Clear" HorizontalAlignment="Left" Height="24" Margin="350,40,0,0" VerticalAlignment="Top" Width="99"/>
                     <TextBox Name="OPS_Install_Output" HorizontalAlignment="Left" Height="229" Margin="10,119,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="746" />
