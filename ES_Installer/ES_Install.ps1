@@ -385,6 +385,35 @@ $WSexists=get-website $IISWebSite
 
 }
 
+Function Show-Info {
+    [cmdletbinding(SupportsShouldProcess)]
+    Param(
+    [string]$Message,
+    [string]$ForegroundColor = "White",
+    $IsCI = $false,
+	$Service
+    )
+	
+	#Write-Host $Message -ForegroundColor $ForegroundColor
+
+	switch ($IsCI) {
+	
+		OPS {
+		$OPS_Install_Output.text += $Message
+		$OPS_Install_Output.text += "`r`n"
+		}
+		RoPE {
+		$RoPE_Install_Output.text += $Message
+		$RoPE_Install_Output.text += "`r`n"
+		}
+		ES {
+		$ES_Install_Output.text += $Message
+		$ES_Install_Output.text += "`r`n"
+		}
+	
+	}
+
+}
 
 #VARIABLES AND DEFINITIONS
 
@@ -445,6 +474,79 @@ $But_OPS_Install.Add_Click({
 	$OPSInstallationPath = $OPS_InstDir.Text
 	
 	#Constants
+	$IsCI = "OPS"
+	$SQLInstance = $MSSQLServerName
+	$opsProductDatabase=$OPSDB
+	$SQLAdmUser = 'unknown'
+	$SQLAdmPass = '404'
+	$serviceUserDomain=$env:UserDomain
+	$serviceUser=$OPSUser
+	$serviceUserPassword=$OPSPassword
+	$ConnectionString = "Initial Catalog ="+$OPSDB+";Integrated Security=SSPI;Data Source="+$MSSQLServerName+";"
+	
+	
+	####Prep#########
+	[System.Windows.MessageBox]::Show("Please select the relevant intallation file for Omada Provisioning Service `r`nExample: C:\Omada\Install\Omada Provisioning Service.exe ", "Select OPS Install File")
+	Show-Info -IsCI $IsCI -Message "5. Omada Provisioning Service installation" -ForegroundColor DarkGreen
+    Show-Info -IsCI $IsCI -Message "Omada Provisioning Service installation starting..." -foregroundcolor yellow
+	$OPS_Install_Output.text += "Installation in progress...`r`n"
+	$OPSInstallPath=Get-FileName -initialDirectory "C:\Omada\Install\"
+	$InstallerFolder = Split-Path -Path $OPSInstallPath
+ 	$RootInstallerFolder = Split-Path -Path $InstallerFolder
+	$logPath = Join-Path -Path $RootInstallerFolder -ChildPath "\Logs"
+	$PSCommandPath = Join-Path -Path $RootInstallerFolder -ChildPath "\DO-UpgradeTools"
+	
+	
+
+        <# try{ #>
+
+            $args = ("/l*v \""{0}\installlog_ops.log\""" -F $logPath)
+            $args += " IS_SQLSERVER_SERVER=\""$SQLInstance\"""
+            $args += " IS_SQLSERVER_DATABASE=\""$opsProductDatabase\"""
+            $args += " IS_SQLSERVER_USERNAME=\""$SQLAdmUser\"""
+            $args += " IS_SQLSERVER_PASSWORD=\""$SQLAdmPass\"""
+<#             if ($useSQLUser){
+                $args += " IS_SQLSERVER_AUTHENTICATION=\""1\"""
+            }
+            else
+            { #>
+                $args += " IS_SQLSERVER_AUTHENTICATION=\""0\"""
+<#             } #>
+            $args += " SERVICETYPE=\""2\"""
+            $args += " SERVICEDOMAIN=\""$serviceUserDomain\"""
+            $args += " SERVICEUSER=\""$serviceUser\"""
+            $args += " SERVICEPASSWORD=\""$serviceUserPassword\"""
+            $args +=  " INSTALLDIR=\""$opsInstallationPath\"""
+            $args += " OISXCONN=\""$ConnectionString\"""
+
+            #Show-Info -IsCI $IsCI -Message $args
+
+            #$t = Start-Process -Wait -WorkingDirectory $opsInstallerPath -FilePath $OPSexe -ArgumentList "/S /V""$args /qr"" " -PassThru
+			if ($null -eq (Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*  | Where-Object { $_.DisplayName -contains $opsName} )){
+				Show-Info -IsCI $IsCI -Message ("{0} was not installed. Please check installation log for details - {1}\installlog_ops.log" -f $opsName, $logPath) -ForegroundColor Red
+				#break
+			}
+			#in case DB is not created (when installation is unattended, some bug in installer)
+			#check if db exists
+            $dbExists = $false
+			$conn = New-Object system.Data.SqlClient.SqlConnection
+<#                     if ($useSQLUser){
+                        $conn.connectionstring = [string]::format("Server={0};Database={1};User Id={2};Password={3}",$SQLInstance,$opsProductDatabase, $SQLAdmUser, $SQLAdmPass)
+                    }
+                    else{ #>
+                        $conn.connectionstring = [string]::format("Server={0};Database={1};Integrated Security=SSPI;",$SQLInstance,$opsProductDatabase)
+                <#     } #>
+                    try{
+                        $conn.open()
+                        $dbExists = $true
+						#Add user to Database dbo - if db exists
+						Add-UserToDatabase -DBLogin ("{0}\{1}" -F $serviceUserDomain, $opsDBUser) -Instance $SQLInstance -DBName $opsProductDatabase -Role "db_owner" -User $SQLAdmUser -Password $SQLAdmPass -useSQLUser $useSQLUser -IsCI $IsCI
+                    }catch{
+                        $dbExists = $false
+                    }
+                    Show-Info -IsCI $IsCI -Message ("DB exists {0}" -F $dbExists) -ForegroundColor Green
+			
+
 
 
 })
