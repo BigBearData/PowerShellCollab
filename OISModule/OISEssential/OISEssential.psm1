@@ -569,6 +569,7 @@ $CheckRemote
 
 $SSRSConfigFileName = "RSReportServer.config"
 $SSRSPath = OIS_GetServicePath -ServiceName SSRS -ServerName $ServerName -CheckRemote $CheckRemote
+$SSRSPath
 [string]$SSRSConfigPath = $SSRSPath -Replace ("bin","RSReportServer.config")
 
  	if (Get-Content $SSRSConfigPath) {
@@ -2164,7 +2165,7 @@ $CheckRemote = OIS_SF_TestIfRemote -ServerName $SSRSServer
 		} #>
 
 		if (!$SSRSUser) {
-		$SSRSUser = OIS_GetServiceUser -ServiceName SSRS ServerName $SSRSServer -Verbose $V -CheckRemote $CheckRemote #OIS_GetSSRSUser
+		$SSRSUser = OIS_GetServiceUser -ServiceName SSRS -ServerName $SSRSServer -Verbose $V -CheckRemote $CheckRemote #OIS_GetSSRSUser
 		}
 
 #$ErrorActionPreference = "Stop"
