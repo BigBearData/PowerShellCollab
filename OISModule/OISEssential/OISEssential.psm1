@@ -570,7 +570,8 @@ $CheckRemote
 $SSRSConfigFileName = "RSReportServer.config"
 $SSRSPath = OIS_GetServicePath -ServiceName SSRS -ServerName $ServerName -CheckRemote $CheckRemote
 $SSRSPath
-[string]$SSRSConfigPath = $SSRSPath -Replace ("bin","RSReportServer.config")
+#[string]$SSRSConfigPath = $SSRSPath -Replace ("bin","RSReportServer.config")
+[string]$SSRSConfigPath = $SSRSPath+"RSReportServer.config"
 
  	if (Get-Content $SSRSConfigPath) {
 		#$SSRSConfigPath
@@ -628,7 +629,9 @@ switch($ServiceName.ToUpper()) {
 	}
 	SSRS {
 		#$ServerName = OIS_GetSSRSServer
-		$ScriptBlock = { Get-WmiObject win32_service | ?{$_.Name -like 'ReportServer'} | select Name, DisplayName, State, PathName }
+		$ScriptBlock = { get-wmiobject win32_service | where {$_.Name -eq "SQLServerReportingServices"} | select PathName, StartName, Name, State }
+		#$ScriptBlock = { Get-WmiObject win32_service | ?{$_.Name -like 'ReportServer'} | select Name, DisplayName, State, PathName }
+        #get-wmiobject win32_service | where {$_.Name -eq "SQLServerReportingServices"} | select PathName, StartName, Name, State
 		#$CheckRemote
 	}
 	MSSQL {
@@ -645,8 +648,11 @@ switch($ServiceName.ToUpper()) {
 		[string]$ServiceInfoPathName = $ServiceInfo.PathName | Select-String '^"?(.+)\.exe' | ForEach-Object {
 			Split-Path $_.Matches[0].Groups[1].Value -Parent
 			}
-		$UNCServicePath = "\\"+$ServerName+"\"+$ServiceInfoPathName -replace (":","$")
-		$UNCServicePath
+		#$ServiceInfoPathName
+        #rsreportserver.config
+        $UNCServicePath = "\\"+$ServerName+"\"+$ServiceInfoPathName -replace (":","$") | Split-Path
+		$UNCServicePath = $UNCServicePath+"\ReportServer\"
+        $UNCServicePath
 		}
 		else {
 		Write-host ""
@@ -1249,7 +1255,10 @@ switch($ServiceName.ToUpper()) {
 		$ScriptBlock = { Get-WmiObject win32_service | ?{$_.Name -like '*MsDtsServer*'} | select Name, StartName, State, PathName }		
 	}
 	SSRS {
-		$ScriptBlock = { Get-WmiObject win32_service | ?{$_.Name -like 'ReportServer'} | select Name, StartName, State, PathName }
+        $ScriptBlock = { get-wmiobject win32_service | where {$_.Name -eq "SQLServerReportingServices"} | select PathName, StartName, Name, State }
+		#$ScriptBlock = { Get-WmiObject win32_service | ?{$_.Name -like 'ReportServer'} | select Name, StartName, State, PathName }
+        #$ScriptBlock = { get-wmiobject -Query "Select * From win32_Service WHERE Name Like '%Reporting%'"}
+        #get-wmiobject win32_service | where {$_.Name -eq "SQLServerReportingServices"} | select PathName, StartName, Name, State | fl
 	}
 	MSSQL {
 		$ScriptBlock = { Get-WmiObject win32_service | ?{$_.Name -like 'MSSQLSERVER'} | select Name, StartName, State, PathName }
